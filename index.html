@@ -13,7 +13,7 @@
   <header>
     <h1>🛠 FixMyRoom</h1>
     <div id="authControls">
-      <button id="loginBtn">Login</button>
+      <button id="loginBtn">Login with Google</button>
       <button id="logoutBtn" style="display:none;">Logout</button>
     </div>
   </header>
@@ -26,9 +26,10 @@
     <!-- Sidebar -->
     <div id="sidebar">
       <h2>Service Providers</h2>
-      <ul id="providerList"></ul>
+      <p id="loadingMsg">Loading providers...</p>
+      <div id="providerList"></div>
 
-      <!-- Provider Registration Form (hidden unless logged in) -->
+      <!-- Provider Registration Form (only for admin) -->
       <div id="providerFormContainer" style="display:none;">
         <h3>Add Your Service</h3>
         <form id="providerForm">
@@ -46,12 +47,7 @@
   </div>
 
   <!-- Firebase + App Scripts -->
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script> <!-- Leaflet.js first -->
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js" type="module"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js" type="module"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js" type="module"></script>
-
-  <!-- Your App Files -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script type="module" src="firebase-config.js?v=1.1"></script>
   <script type="module" src="user.js?v=1.1"></script>
   <script type="module" src="app.js?v=1.1"></script>

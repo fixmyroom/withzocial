@@ -1,4 +1,4 @@
-import { db } from "./firebase-config.js";
+import { db } from "./public/firebase-config.js";
 import { collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const map = L.map("map").setView([20.5937, 78.9629], 5);
