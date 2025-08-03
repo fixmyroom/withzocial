@@ -10,10 +10,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # No build step needed — just deploy static files
+      # Deploy directly without build step
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_FIXMYROOM_MAP }}'
           channelId: live
-          projectId: fixmyroom-map
+          projectId: fixmyroom-7a518
