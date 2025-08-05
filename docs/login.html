@@ -4,95 +4,114 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FixMyRoom - Login</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="style.css">
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    .login-box {
+      max-width: 400px;
+      margin: 100px auto;
+      background: #222;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.6);
+    }
+    input {
+      width: 90%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: none;
+    }
+    button {
+      width: 95%;
+      padding: 12px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover { background: #218838; }
+    .link {
+      display: block;
+      margin-top: 15px;
+      color: #0dcaf0;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-  <div class="container center">
-    <!-- Logo -->
-    <img src="img/logo.png" class="logo" alt="FixMyRoom Logo">
 
-    <!-- Title -->
-    <h1>🔑 Login / Signup</h1>
-    <p class="slogan">Access workers, stores & services instantly 🚀</p>
+  <div class="login-box">
+    <h1>🏠 FixMyRoom</h1>
+    <h2>🔑 Login / Signup</h2>
+    <p>Access workers, stores & services instantly 🚀</p>
 
-    <!-- Card -->
-    <div class="card">
-      <input type="email" id="email" placeholder="📧 Email" />
-      <input type="password" id="password" placeholder="🔒 Password" />
+    <form id="loginForm">
+      <input type="email" id="email" placeholder="Enter email" required><br>
+      <input type="password" id="password" placeholder="Enter password" required><br>
+      <button type="submit">➡️ Continue</button>
+    </form>
 
-      <button class="btn btn-primary" onclick="login()">➡️ Continue</button>
-
-      <p style="margin-top:12px; color:#bbb;">
-        New here? <a href="#" onclick="signup()">✨ Create Account</a>
-      </p>
-    </div>
-
-    <!-- Back to Home -->
-    <p class="links">
-      <a href="index.html">🏠 Back to Home</a>
-    </p>
+    <div class="link" id="signupBtn">✨ Create Account</div>
+    <a href="index.html" class="link">🏠 Back to Home</a>
   </div>
 
-  <script src="js/firebase-config.js"></script>
-  <script>
-    const auth = firebase.auth();
-    const usersRef = db.collection("users");
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } 
+      from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 
-    // ✅ Auto redirect if logged in
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        window.location.href = "role.html";
-      }
+    // ✅ Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCSQXEh2Lvn2VQfLOUIAvfpWIFyC4rM-qs",
+      authDomain: "fixmyroom-7a518.firebaseapp.com",
+      projectId: "fixmyroom-7a518",
+      storageBucket: "fixmyroom-7a518.appspot.com",
+      messagingSenderId: "515188781683",
+      appId: "1:515188781683:web:21d074ae3a4910e0282815"
+    };
+
+    // Init Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Login handler
+    document.getElementById("loginForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          alert("✅ Logged in!");
+          window.location.href = "map.html"; // redirect after login
+        })
+        .catch((err) => alert("❌ " + err.message));
     });
 
-    // ✅ Login
-    function login() {
+    // Signup handler
+    document.getElementById("signupBtn").addEventListener("click", () => {
       const email = document.getElementById("email").value;
-      const pass = document.getElementById("password").value;
+      const password = document.getElementById("password").value;
 
-      if (!email || !pass) {
-        alert("⚠️ Please enter email and password");
-        return;
-      }
-
-      auth.signInWithEmailAndPassword(email, pass)
-        .then(() => {
-          window.location.href = "role.html";
+      createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          alert("✅ Account created! You can now login.");
         })
-        .catch(err => alert("❌ " + err.message));
-    }
-
-    // ✅ Signup
-    function signup() {
-      const email = document.getElementById("email").value;
-      const pass = document.getElementById("password").value;
-
-      if (!email || !pass) {
-        alert("⚠️ Please enter email and password");
-        return;
-      }
-
-      auth.createUserWithEmailAndPassword(email, pass)
-        .then(userCred => {
-          const user = userCred.user;
-
-          // Save default profile
-          usersRef.doc(user.uid).set({
-            email: user.email,
-            role: "customer", // default role
-            createdAt: Date.now()
-          });
-
-          alert("✅ Account created successfully!");
-          window.location.href = "role.html";
-        })
-        .catch(err => alert("❌ " + err.message));
-    }
+        .catch((err) => alert("❌ " + err.message));
+    });
   </script>
+
 </body>
 </html>
