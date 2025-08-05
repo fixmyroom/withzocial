@@ -2,28 +2,115 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FixMyRoom - Map</title>
   <link rel="stylesheet" href="css/styles.css">
   <style>
     #map {
       width: 100%;
-      height: 80vh;
+      height: 85vh;
       border-radius: 10px;
+      margin-top: 10px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 15px;
+      background: #111;
+      border-bottom: 2px solid #333;
+    }
+    header .logo {
+      height: 40px;
+    }
+    header h2 {
+      flex-grow: 1;
+      text-align: center;
+      margin: 0;
+      font-size: 1.2rem;
+      color: #fff;
+    }
+    .logout-btn {
+      background: #f44336;
+      border: none;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .logout-btn:hover {
+      background: #d32f2f;
+    }
+    @media (max-width: 768px) {
+      .logout-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 55px;
+        height: 55px;
+        border-radius: 50%;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      }
+    }
+    /* Filter dropdown */
+    #roleFilter {
+      width: 200px;
+      padding: 8px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
   </style>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <header>
-    <img src="images/logo.png" alt="FixMyRoom Logo" class="logo">
+    <img src="img/logo.png" alt="FixMyRoom Logo" class="logo">
     <h2>🗺️ Workers Map</h2>
-    <button onclick="window.location.href='dashboard.html'" class="btn-secondary">⬅ Back to Dashboard</button>
+    <button class="logout-btn" onclick="logout()">🚪</button>
   </header>
 
-  <main>
-    <div id="map"></div>
+  <main class="container">
+    <div class="card">
+      <!-- 🔽 Role Filter -->
+      <select id="roleFilter">
+        <option value="all">🌍 Show All</option>
+        <option value="painter">🎨 Painters</option>
+        <option value="plumber">🔧 Plumbers</option>
+        <option value="electrician">⚡ Electricians</option>
+        <option value="store">🏬 Stores</option>
+      </select>
+
+      <div id="map"></div>
+    </div>
   </main>
 
-  <!-- Google Maps JS API -->
+  <!-- Firebase Config -->
+  <script src="js/firebase-config.js"></script>
+  <script>
+    const auth = firebase.auth();
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = "login.html";
+      }
+    });
+
+    function logout() {
+      auth.signOut().then(() => {
+        window.location.href = "login.html";
+      });
+    }
+  </script>
+
+  <!-- Google Maps API -->
   <script async defer
     src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap">
   </script>

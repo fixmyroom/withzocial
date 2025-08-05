@@ -1,33 +1,105 @@
-import { db } from "../firebase-config.js";
-import { collection, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore.js";
+// ===============================
+// FixMyRoom - Admin Panel
+// ===============================
 
-// Render helper
-function renderTable(ref, tableId, fields, type) {
-  const table = document.getElementById(tableId);
-  onSnapshot(collection(db, ref), (snap) => {
-    table.innerHTML = `<tr>${fields.map(f => `<th>${f}</th>`).join("")}<th>Action</th></tr>`;
-    snap.forEach(d => {
-      const data = d.data();
+const usersRef = db.collection("users");
+const requestsRef = db.collection("requests");
+const storesRef = db.collection("stores");
+
+// Auth check
+auth.onAuthStateChanged(user => {
+  if (!user) {
+    window.location.href = "login.html";
+  } else {
+    loadUsers();
+    loadRequests();
+    loadStores();
+  }
+});
+
+// ===============================
+// Users table
+// ===============================
+function loadUsers() {
+  const table = document.querySelector("#usersTable tbody");
+  table.innerHTML = "";
+
+  usersRef.onSnapshot(snapshot => {
+    table.innerHTML = "";
+    snapshot.forEach(doc => {
+      const u = doc.data();
       const row = document.createElement("tr");
+
       row.innerHTML = `
-        ${fields.map(f => `<td>${data[f] || ""}</td>`).join("")}
-        <td><button onclick="deleteItem('${ref}','${d.id}')">🗑️ Delete</button></td>
+        <td>${u.name || "N/A"}</td>
+        <td>${u.role || "N/A"}</td>
+        <td>${u.phone || "N/A"}</td>
+        <td>${u.isPremium ? "⭐ Yes" : "❌ No"}</td>
+        <td>
+          <button onclick="togglePremium('${doc.id}', ${u.isPremium})">
+            ${u.isPremium ? "Remove Premium" : "Set Premium"}
+          </button>
+        </td>
       `;
+
       table.appendChild(row);
     });
   });
 }
 
-// Attach tables
-renderTable("users", "usersTable", ["name", "email", "phone"]);
-renderTable("workers", "workersTable", ["name", "skill", "phone"]);
-renderTable("stores", "storesTable", ["name", "category", "phone"]);
-renderTable("requests", "reqsTable", ["customerId", "workerId", "status"]);
+function togglePremium(uid, currentStatus) {
+  usersRef.doc(uid).update({
+    isPremium: !currentStatus
+  }).then(() => {
+    alert("✅ Premium status updated");
+  });
+}
 
-// Delete item
-window.deleteItem = async (col, id) => {
-  if (confirm("⚠️ Delete this record?")) {
-    await deleteDoc(doc(db, col, id));
-    alert("✅ Deleted");
-  }
-};
+// ===============================
+// Requests table
+// ===============================
+function loadRequests() {
+  const table = document.querySelector("#requestsTable tbody");
+  table.innerHTML = "";
+
+  requestsRef.orderBy("createdAt", "desc").onSnapshot(snapshot => {
+    table.innerHTML = "";
+    snapshot.forEach(doc => {
+      const r = doc.data();
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+        <td>${r.name}</td>
+        <td>${r.phone}</td>
+        <td>${r.details}</td>
+        <td>${new Date(r.createdAt).toLocaleString()}</td>
+      `;
+
+      table.appendChild(row);
+    });
+  });
+}
+
+// ===============================
+// Stores table
+// ===============================
+function loadStores() {
+  const table = document.querySelector("#storesTable tbody");
+  table.innerHTML = "";
+
+  storesRef.onSnapshot(snapshot => {
+    table.innerHTML = "";
+    snapshot.forEach(doc => {
+      const s = doc.data();
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+        <td>${s.name || "N/A"}</td>
+        <td>${s.phone || "N/A"}</td>
+        <td>${s.desc || ""}</td>
+      `;
+
+      table.appendChild(row);
+    });
+  });
+}

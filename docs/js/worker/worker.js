@@ -1,69 +1,137 @@
-import { auth, db } from "../firebase-config.js";
-import { doc, setDoc, onSnapshot, query, where, collection, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore.js";
+// ===============================
+// FixMyRoom - Worker Dashboard
+// ===============================
 
-let currentWorkerId = null;
+let map;
+let userMarker;
 
-// Wait for user auth
-auth.onAuthStateChanged(async (user) => {
-  if (!user) {
-    alert("Please login first!");
-    window.location.href = "login.html";
-    return;
-  }
-
-  currentWorkerId = user.uid;
-
-  // Start GPS tracking
-  startLocationUpdates(user);
-
-  // Listen for requests
-  const reqRef = query(collection(db, "requests"), where("workerId", "==", user.uid));
-  onSnapshot(reqRef, (snap) => {
-    const list = document.getElementById("reqList");
-    list.innerHTML = "";
-    snap.forEach(docSnap => {
-      const req = docSnap.data();
-      const div = document.createElement("div");
-      div.className = "req";
-      div.innerHTML = `
-        🧑‍💼 Customer: ${req.customerId}<br>
-        Status: ${req.status}<br>
-        <button class="accept" onclick="acceptReq('${docSnap.id}')">✔️ Accept</button>
-        <button class="reject" onclick="rejectReq('${docSnap.id}')">❌ Reject</button>
-      `;
-      list.appendChild(div);
-    });
-  });
-});
-
-// Update worker location every 10s
-function startLocationUpdates(user) {
-  if (!navigator.geolocation) {
-    alert("❌ Geolocation not supported.");
-    return;
-  }
-
-  setInterval(() => {
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      const { latitude, longitude } = pos.coords;
-      await setDoc(doc(db, "workers", user.uid), {
-        name: user.displayName || "Worker",
-        skill: "General", // we can make this editable later
-        availability: "Available",
-        location: { lat: latitude, lng: longitude },
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-    });
-  }, 10000); // 10 seconds
+// Init map
+function initMap() {
+  map = L.map('map').setView([27.7, 85.3], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
 }
 
-// Accept / Reject request
-window.acceptReq = async (reqId) => {
-  await updateDoc(doc(db, "requests", reqId), { status: "accepted" });
-  alert("✅ Request accepted!");
-};
+// Track worker location
+function trackWorkerLocation(userId) {
+  if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(pos => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
 
-window.rejectReq = async (reqId) => {
-  await updateDoc(doc(db, "requests", reqId), { status: "rejected" });
-  alert("❌ Request rejected!");
-};
+      // Update marker
+      if (userMarker) {
+        userMarker.setLatLng([lat, lng]);
+      } else {
+        userMarker = L.marker([lat, lng], {
+          icon: L.divIcon({
+            className: "worker-marker",
+            html: "👷",
+            iconSize: [30, 30]
+          })
+        }).addTo(map).bindPopup("📍 You are here");
+      }
+
+      map.setView([lat, lng], 14);
+
+      // Update Firestore
+      db.collection("users").doc(userId).set({
+        location: { lat, lng, updated: Date.now() }
+      }, { merge: true });
+    });
+  }
+}
+
+// Save worker profile
+function saveWorkerProfile() {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+
+  const name = document.getElementById("workerName").value;
+  const phone = document.getElementById("workerPhone").value;
+  const price = document.getElementById("workerPrice").value;
+
+  db.collection("users").doc(user.uid).set({
+    name, phone, price
+  }, { merge: true }).then(() => {
+    alert("✅ Profile updated!");
+  });
+}
+
+// Load requests for this worker
+function loadRequests(role) {
+  const requestsList = document.getElementById("requestsList");
+  db.collection("requests")
+    .orderBy("createdAt", "desc")
+    .onSnapshot(snapshot => {
+      requestsList.innerHTML = "";
+      let hasRequests = false;
+
+      snapshot.forEach(doc => {
+        const req = doc.data();
+
+        // Show only requests for this role
+        if (req.serviceType !== role) return;
+
+        hasRequests = true;
+        const div = document.createElement("div");
+        div.className = "card";
+
+        div.innerHTML = `
+          <p><b>👤 ${req.customerName}</b> (${req.customerPhone})</p>
+          <p>${req.details}</p>
+          <button class="btn btn-primary" onclick="acceptRequest('${doc.id}')">✅ Accept</button>
+          <button class="btn btn-danger" onclick="rejectRequest('${doc.id}')">❌ Reject</button>
+        `;
+        requestsList.appendChild(div);
+      });
+
+      if (!hasRequests) {
+        requestsList.innerHTML = "<p>No requests yet.</p>";
+      }
+    });
+}
+
+// Accept request
+function acceptRequest(id) {
+  db.collection("requests").doc(id).update({
+    status: "accepted"
+  }).then(() => {
+    alert("🎉 You accepted this request!");
+  });
+}
+
+// Reject request
+function rejectRequest(id) {
+  db.collection("requests").doc(id).update({
+    status: "rejected"
+  }).then(() => {
+    alert("❌ You rejected this request.");
+  });
+}
+
+// ===============================
+// Init
+// ===============================
+firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    db.collection("users").doc(user.uid).get().then(doc => {
+      const data = doc.data();
+      const role = data?.role || "worker";
+
+      initMap();
+      trackWorkerLocation(user.uid);
+      loadRequests(role);
+
+      // Pre-fill profile
+      if (data) {
+        document.getElementById("workerName").value = data.name || "";
+        document.getElementById("workerPhone").value = data.phone || "";
+        document.getElementById("workerPrice").value = data.price || "";
+      }
+    });
+  } else {
+    window.location.href = "login.html";
+  }
+});

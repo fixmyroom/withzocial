@@ -3,20 +3,96 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login | FixMyRoom 🔑</title>
+  <title>FixMyRoom - Login</title>
   <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <div class="container center">
-    <h1>🔑 Login to FixMyRoom</h1>
-    
-    <button id="googleLogin" class="btn">🌐 Continue with Google</button>
-    <button id="emailLogin" class="btn">📧 Continue with Email</button>
+    <!-- Logo -->
+    <img src="img/logo.png" class="logo" alt="FixMyRoom Logo">
 
-    <p id="authMessage" class="message"></p>
+    <!-- Title -->
+    <h1>🔑 Login / Signup</h1>
+    <p class="slogan">Access workers, stores & services instantly 🚀</p>
+
+    <!-- Card -->
+    <div class="card">
+      <input type="email" id="email" placeholder="📧 Email" />
+      <input type="password" id="password" placeholder="🔒 Password" />
+
+      <button class="btn btn-primary" onclick="login()">➡️ Continue</button>
+
+      <p style="margin-top:12px; color:#bbb;">
+        New here? <a href="#" onclick="signup()">✨ Create Account</a>
+      </p>
+    </div>
+
+    <!-- Back to Home -->
+    <p class="links">
+      <a href="index.html">🏠 Back to Home</a>
+    </p>
   </div>
 
-  <script type="module" src="js/firebase-config.js"></script>
-  <script type="module" src="js/auth/auth.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script>
+    const auth = firebase.auth();
+    const usersRef = db.collection("users");
+
+    // ✅ Auto redirect if logged in
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        window.location.href = "role.html";
+      }
+    });
+
+    // ✅ Login
+    function login() {
+      const email = document.getElementById("email").value;
+      const pass = document.getElementById("password").value;
+
+      if (!email || !pass) {
+        alert("⚠️ Please enter email and password");
+        return;
+      }
+
+      auth.signInWithEmailAndPassword(email, pass)
+        .then(() => {
+          window.location.href = "role.html";
+        })
+        .catch(err => alert("❌ " + err.message));
+    }
+
+    // ✅ Signup
+    function signup() {
+      const email = document.getElementById("email").value;
+      const pass = document.getElementById("password").value;
+
+      if (!email || !pass) {
+        alert("⚠️ Please enter email and password");
+        return;
+      }
+
+      auth.createUserWithEmailAndPassword(email, pass)
+        .then(userCred => {
+          const user = userCred.user;
+
+          // Save default profile
+          usersRef.doc(user.uid).set({
+            email: user.email,
+            role: "customer", // default role
+            createdAt: Date.now()
+          });
+
+          alert("✅ Account created successfully!");
+          window.location.href = "role.html";
+        })
+        .catch(err => alert("❌ " + err.message));
+    }
+  </script>
 </body>
 </html>

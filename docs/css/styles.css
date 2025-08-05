@@ -1,4 +1,4 @@
-/* Reset + Dark Theme */
+/* 🌑 Reset + Dark Theme */
 * {
   margin: 0;
   padding: 0;
@@ -15,7 +15,7 @@ body {
 }
 
 h1, h2, h3 {
-  color: #1db954; /* Uber-style green accent */
+  color: #1db954; /* Accent green */
   margin-bottom: 10px;
 }
 
@@ -29,8 +29,17 @@ h1, h2, h3 {
   text-align: center;
 }
 
-/* Buttons */
-button {
+/* 🖼 Logo */
+.logo {
+  max-width: 150px;
+  height: auto;
+  display: block;
+  margin: 0 auto 20px auto;
+  border-radius: 12px;
+}
+
+/* 🔘 Buttons */
+button, .btn {
   display: inline-block;
   padding: 12px 18px;
   margin: 6px;
@@ -40,13 +49,14 @@ button {
   border: none;
   cursor: pointer;
   transition: 0.2s;
+  text-decoration: none;
 }
 
-button:hover {
+button:hover, .btn:hover {
   opacity: 0.85;
 }
 
-.btn-primary {
+.btn-primary, .btn {
   background: #1db954;
   color: #fff;
 }
@@ -61,17 +71,38 @@ button:hover {
   color: #fff;
 }
 
-/* Cards */
-.card {
+/* 🚀 Landing Button */
+.btn-main {
+  display: inline-block;
+  background: #1db954;
+  color: #fff;
+  padding: 14px 24px;
+  margin-top: 15px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  text-decoration: none;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+  transition: all 0.25s ease-in-out;
+}
+
+.btn-main:hover {
+  background: #17a84d;
+  box-shadow: 0 0 14px #1db954;
+  transform: translateY(-2px);
+}
+
+/* 🗂 Cards & Sections */
+.card, section {
   background: #1e1e1e;
   border-radius: 12px;
   padding: 15px;
-  margin-bottom: 15px;
+  margin: 15px 0;
   box-shadow: 0 2px 6px rgba(0,0,0,0.4);
 }
 
-/* Forms */
-input, select {
+/* ✏️ Forms */
+input, select, textarea {
   width: 100%;
   padding: 12px;
   margin: 8px 0;
@@ -81,15 +112,21 @@ input, select {
   color: #fff;
 }
 
-input::placeholder {
+input::placeholder, textarea::placeholder {
   color: #aaa;
 }
 
-/* Tables */
+textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* 📋 Tables */
 table {
   width: 100%;
   margin-top: 10px;
   border-collapse: collapse;
+  font-size: 14px;
 }
 
 th, td {
@@ -100,28 +137,118 @@ th, td {
 
 th {
   background: #222;
+  color: #1db954;
 }
 
 td {
   background: #1a1a1a;
 }
 
-/* Map */
+/* 🗺️ Map */
 #map {
   height: 100vh;
   width: 100%;
+  border-radius: 12px;
+  border: 2px solid #1db95433;
+  margin-top: 10px;
 }
 
-/* Mobile Responsive */
+/* 🎨 Painter Tool */
+canvas {
+  width: 100%;
+  max-width: 400px;
+  margin-top: 10px;
+  border: 2px solid #333;
+  border-radius: 8px;
+  background: #000;
+}
+
+/* 📏 Plumber Camera */
+#camera, #cameraStream {
+  width: 100%;
+  max-width: 400px;
+  margin-top: 10px;
+  border: 2px solid #333;
+  border-radius: 8px;
+}
+
+/* 🏬 Store Catalog */
+#catalogGallery, .catalogGallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.catalog-photo {
+  width: 120px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 5px;
+  background: #1e1e1e;
+  text-align: center;
+}
+
+.catalog-photo img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+/* 🔗 Social Links */
+.social-links {
+  margin-top: 25px;
+}
+
+.social-links a {
+  display: inline-block;
+  margin: 8px 12px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: bold;
+  color: #fff;
+  font-size: 1rem;
+  transition: all 0.25s ease-in-out;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+}
+
+/* WhatsApp */
+.whatsapp { background: #25D366; }
+.whatsapp:hover {
+  background: #1db954;
+  box-shadow: 0 0 12px #25D366;
+  transform: translateY(-2px);
+}
+
+/* Facebook */
+.facebook { background: #1877F2; }
+.facebook:hover {
+  background: #0d5adb;
+  box-shadow: 0 0 12px #1877F2;
+  transform: translateY(-2px);
+}
+
+/* General Links */
+.links a {
+  color: #1db954;
+  margin: 0 10px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.links a:hover {
+  text-decoration: underline;
+}
+
+/* 📱 Mobile Responsive */
 @media (max-width: 768px) {
-  body {
-    font-size: 15px;
-  }
-  button {
+  body { font-size: 15px; }
+  button, .btn, .btn-main {
     width: 100%;
     margin-top: 10px;
   }
-  .container {
-    padding: 10px;
-  }
+  .container { padding: 10px; }
+  .logo { max-width: 120px; }
+  .catalog-photo { width: 48%; }
 }

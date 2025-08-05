@@ -3,68 +3,303 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel 🛠️</title>
+  <title>FixMyRoom - Admin Panel</title>
   <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
   <style>
-    .tab {
-      margin: 10px;
-      padding: 10px;
-      background: #222;
-      border-radius: 8px;
-      color: #fff;
-    }
-    h2 {
-      margin-top: 20px;
-      color: #1db954;
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      margin: 10px 0;
     }
     table {
       width: 100%;
-      margin-top: 10px;
       border-collapse: collapse;
-      background: #333;
-      color: #fff;
+      min-width: 500px;
     }
     th, td {
       border: 1px solid #444;
-      padding: 6px;
+      padding: 8px;
       text-align: left;
     }
-    button {
-      background: #ff5252;
-      border: none;
-      color: white;
+    th {
+      background: #222;
+      color: #fff;
+    }
+    td button {
       padding: 5px 10px;
       border-radius: 5px;
+      border: none;
       cursor: pointer;
+    }
+    td button.set {
+      background: #ff9800;
+      color: #fff;
+    }
+    td button.remove {
+      background: #f44336;
+      color: #fff;
+    }
+
+    /* Fixed header */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #111;
+      border-bottom: 2px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 15px;
+      z-index: 1000;
+    }
+    header .logo {
+      height: 40px;
+      position: absolute;
+      left: 10px;
+    }
+    header h1 {
+      font-size: 1.2rem;
+      margin: 0;
+      text-align: center;
+    }
+    .logout-btn {
+      position: absolute;
+      right: 10px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      background: #f44336;
+      color: #fff;
+      cursor: pointer;
+    }
+    .logout-btn:hover {
+      background: #d32f2f;
+    }
+    @media (max-width: 768px) {
+      .logout-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 55px;
+        height: 55px;
+        border-radius: 50%;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      }
+    }
+    main {
+      margin-top: 80px;
+      padding: 15px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🛠️ Admin Panel</h1>
+  <header>
+    <img src="img/logo.png" alt="FixMyRoom" class="logo">
+    <h1>⚙️ Admin Panel</h1>
+    <button class="logout-btn" onclick="logout()">🚪</button>
+  </header>
 
-    <div class="tab">
-      <h2>👤 Users</h2>
-      <table id="usersTable"><tr><th>Name</th><th>Email</th><th>Phone</th><th>Action</th></tr></table>
-    </div>
+  <main class="container">
+    <!-- 👥 Users -->
+    <section class="card">
+      <h2>👥 Users</h2>
+      <div class="table-container">
+        <table id="usersTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Role</th>
+              <th>Premium</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
 
-    <div class="tab">
-      <h2>🧑‍🔧 Workers</h2>
-      <table id="workersTable"><tr><th>Name</th><th>Skill</th><th>Phone</th><th>Action</th></tr></table>
-    </div>
+    <!-- 🛠 Workers -->
+    <section class="card">
+      <h2>🛠 Workers</h2>
+      <div class="table-container">
+        <table id="workersTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Price</th>
+              <th>Premium</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
 
-    <div class="tab">
-      <h2>🏪 Stores</h2>
-      <table id="storesTable"><tr><th>Name</th><th>Category</th><th>Phone</th><th>Action</th></tr></table>
-    </div>
-
-    <div class="tab">
+    <!-- 📩 Requests -->
+    <section class="card">
       <h2>📩 Requests</h2>
-      <table id="reqsTable"><tr><th>Customer</th><th>Worker</th><th>Status</th><th>Action</th></tr></table>
-    </div>
-  </div>
+      <div class="table-container">
+        <table id="requestsTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Details</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
 
-  <script type="module" src="js/firebase-config.js"></script>
-  <script type="module" src="js/admin/admin.js"></script>
+    <!-- 🏬 Stores -->
+    <section class="card">
+      <h2>🏬 Stores</h2>
+      <div class="table-container">
+        <table id="storesTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/firebase-config.js"></script>
+  <script>
+    const auth = firebase.auth();
+
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = "login.html";
+      } else {
+        loadUsers();
+        loadWorkers();
+        loadRequests();
+        loadStores();
+      }
+    });
+
+    function loadUsers() {
+      const table = document.querySelector("#usersTable tbody");
+      table.innerHTML = "";
+      db.collection("users").get().then(snapshot => {
+        snapshot.forEach(doc => {
+          const u = doc.data();
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${u.name || "-"}</td>
+            <td>${u.phone || "-"}</td>
+            <td>${u.role || "-"}</td>
+            <td>${u.isPremium ? "⭐ Yes" : "No"}</td>
+            <td>
+              <button class="${u.isPremium ? "remove" : "set"}" 
+                onclick="togglePremium('${doc.id}', ${!u.isPremium})">
+                ${u.isPremium ? "❌ Remove Premium" : "⭐ Set Premium"}
+              </button>
+            </td>
+          `;
+          table.appendChild(tr);
+        });
+      });
+    }
+
+    function loadWorkers() {
+      const table = document.querySelector("#workersTable tbody");
+      table.innerHTML = "";
+      db.collection("users").where("role", "in", ["painter","plumber","electrician"])
+        .get().then(snapshot => {
+          snapshot.forEach(doc => {
+            const w = doc.data();
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${w.name || "-"}</td>
+              <td>${w.phone || "-"}</td>
+              <td>${w.price || "-"}</td>
+              <td>${w.isPremium ? "⭐ Yes" : "No"}</td>
+              <td>
+                <button class="${w.isPremium ? "remove" : "set"}"
+                  onclick="togglePremium('${doc.id}', ${!w.isPremium})">
+                  ${w.isPremium ? "❌ Remove Premium" : "⭐ Set Premium"}
+                </button>
+              </td>
+            `;
+            table.appendChild(tr);
+          });
+        });
+    }
+
+    function togglePremium(uid, status) {
+      db.collection("users").doc(uid).update({ isPremium: Boolean(status) })
+        .then(() => {
+          alert("✅ Premium updated");
+          loadUsers();
+          loadWorkers();
+        })
+        .catch(err => alert("❌ " + err.message));
+    }
+
+    function loadRequests() {
+      const table = document.querySelector("#requestsTable tbody");
+      table.innerHTML = "";
+      db.collection("requests").orderBy("createdAt", "desc").get().then(snapshot => {
+        snapshot.forEach(doc => {
+          const r = doc.data();
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${r.name}</td>
+            <td>${r.phone}</td>
+            <td>${r.details}</td>
+            <td>${r.createdAt ? new Date(r.createdAt).toLocaleString() : "-"}</td>
+          `;
+          table.appendChild(tr);
+        });
+      });
+    }
+
+    function loadStores() {
+      const table = document.querySelector("#storesTable tbody");
+      table.innerHTML = "";
+      db.collection("stores").get().then(snapshot => {
+        snapshot.forEach(doc => {
+          const s = doc.data();
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${s.name || "-"}</td>
+            <td>${s.phone || "-"}</td>
+            <td>${s.desc || "-"}</td>
+          `;
+          table.appendChild(tr);
+        });
+      });
+    }
+
+    function logout() {
+      auth.signOut().then(() => {
+        window.location.href = "login.html";
+      });
+    }
+  </script>
 </body>
 </html>

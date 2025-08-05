@@ -3,43 +3,130 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Worker Dashboard 🧑‍🔧</title>
-  <link rel="stylesheet" href="css/styles.css">
-  <style>
-    #requests {
-      margin-top: 20px;
-      text-align: left;
-      padding: 10px;
-      background: #222;
-      border-radius: 8px;
-    }
-    .req {
-      border-bottom: 1px solid #444;
-      padding: 10px 0;
-    }
-    .req button {
-      margin: 5px;
-      padding: 6px 12px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-    .accept { background: #1db954; color: white; }
-    .reject { background: #ff5252; color: white; }
-  </style>
+  <title>FixMyRoom - Worker Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css"> <!-- ✅ unified design -->
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <div class="container center">
-    <h1>🧑‍🔧 Worker Dashboard</h1>
-    <p>📍 Your location is updating live...</p>
-    <div id="requests">
-      <h3>📩 Incoming Requests</h3>
-      <div id="reqList"></div>
-    </div>
-  </div>
+  <header class="center">
+    <img src="img/logo.png" alt="FixMyRoom" class="logo">
+    <h1>🛠 Worker Dashboard</h1>
+    <button class="btn btn-danger" onclick="logout()">🚪 Logout</button>
+  </header>
 
-  <script type="module" src="js/firebase-config.js"></script>
-  <script type="module" src="js/worker/worker.js"></script>
+  <main class="container">
+    <!-- 👤 Profile -->
+    <section class="card">
+      <h2>👤 My Profile</h2>
+      <input type="text" id="workerName" placeholder="Your Name" />
+      <input type="text" id="workerPhone" placeholder="Your Phone" />
+      <input type="number" id="workerPrice" placeholder="💰 Price per service" />
+      <button id="saveProfile" class="btn btn-primary">💾 Save Profile</button>
+    </section>
+
+    <!-- 📍 Live Location -->
+    <section class="card">
+      <h2>📍 My Location</h2>
+      <p>Location updates automatically if GPS is enabled ✅</p>
+    </section>
+
+    <!-- 📩 Requests -->
+    <section class="card">
+      <h2>📩 Incoming Requests</h2>
+      <table id="requestsTable">
+        <thead>
+          <tr>
+            <th>Details</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="js/firebase-config.js"></script>
+  <script>
+    const auth = firebase.auth();
+    const usersRef = db.collection("users");
+    const requestsRef = db.collection("requests");
+
+    // Redirect if not logged in
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = "login.html";
+      } else {
+        loadProfile(user.uid);
+        listenRequests();
+        startLocationTracking(user.uid);
+      }
+    });
+
+    // Save profile
+    document.getElementById("saveProfile").onclick = () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      const data = {
+        name: document.getElementById("workerName").value,
+        phone: document.getElementById("workerPhone").value,
+        price: document.getElementById("workerPrice").value,
+        updatedAt: Date.now()
+      };
+      usersRef.doc(user.uid).set(data, { merge: true })
+        .then(() => alert("✅ Profile saved"))
+        .catch(err => alert("❌ " + err.message));
+    };
+
+    // Load profile
+    function loadProfile(uid) {
+      usersRef.doc(uid).get().then(doc => {
+        if (doc.exists) {
+          const u = doc.data();
+          document.getElementById("workerName").value = u.name || "";
+          document.getElementById("workerPhone").value = u.phone || "";
+          document.getElementById("workerPrice").value = u.price || "";
+        }
+      });
+    }
+
+    // Live location tracking
+    function startLocationTracking(uid) {
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(pos => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          usersRef.doc(uid).set({
+            location: { lat, lng, updated: Date.now() }
+          }, { merge: true });
+        });
+      }
+    }
+
+    // Listen for requests
+    function listenRequests() {
+      requestsRef.orderBy("createdAt", "desc").onSnapshot(snapshot => {
+        const table = document.querySelector("#requestsTable tbody");
+        table.innerHTML = "";
+        snapshot.forEach(doc => {
+          const r = doc.data();
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${r.details}</td>
+            <td>${new Date(r.createdAt).toLocaleString()}</td>
+          `;
+          table.appendChild(tr);
+        });
+      });
+    }
+
+    // Logout
+    function logout() {
+      auth.signOut().then(() => window.location.href = "login.html");
+    }
+  </script>
 </body>
 </html>

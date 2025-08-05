@@ -1,51 +1,186 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard | Customer 🏠</title>
+  <title>FixMyRoom - Customer Dashboard</title>
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <style>
-    #map { height: 100vh; width: 100%; }
-    .leaflet-popup-content { text-align: center; }
-    .confirm-box {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #222;
-      padding: 15px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.7);
-      display: none;
-      color: #fff;
-    }
-    .confirm-box button {
-      margin: 5px;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 1rem;
-    }
-    .yes { background: #1db954; color: #fff; }
-    .no { background: #ff5252; color: #fff; }
-  </style>
+
+  <!-- Firebase + Leaflet -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
-  <div id="map"></div>
+  <header>
+    <img src="img/logo.png" alt="FixMyRoom Logo" class="logo">
+    <h1>👤 Customer Dashboard</h1>
+    <button class="btn btn-danger" onclick="logout()">🚪 Logout</button>
+  </header>
 
-  <!-- Booking confirm popup -->
-  <div id="confirmBox" class="confirm-box">
-    <p id="confirmText">📩 Confirm booking?</p>
-    <button class="yes" onclick="confirmYes()">✔️ Yes</button>
-    <button class="no" onclick="confirmNo()">❌ Cancel</button>
-  </div>
+  <main class="container">
+    <!-- 📍 Live Map -->
+    <section class="card">
+      <h2>📍 Workers & Stores Nearby</h2>
+      <input type="text" id="searchInput" placeholder="🔍 Search by name or role">
+      <div id="map"></div>
+    </section>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script type="module" src="js/firebase-config.js"></script>
-  <script type="module" src="js/map/map.js"></script>
-  <script type="module" src="js/booking/booking.js"></script>
+    <!-- 📩 Request Service Modal -->
+    <div id="requestModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span id="closeRequest" style="float:right; cursor:pointer;">❌</span>
+        <h2>📩 Request Service</h2>
+        <form id="requestForm">
+          <input type="hidden" id="targetId">
+          <input type="hidden" id="targetType">
+
+          <input type="text" id="reqName" placeholder="👤 Your Name" required>
+          <input type="text" id="reqPhone" placeholder="📞 Your Phone" required>
+          <textarea id="reqDetails" placeholder="💬 Describe your problem" required></textarea>
+
+          <label>📷 Upload Photo (optional):</label>
+          <input type="file" id="reqPhoto" accept="image/*">
+
+          <button type="submit" class="btn btn-primary">✅ Submit Request</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 🎨 Painter Tool -->
+    <section class="card">
+      <h2>🎨 Painter Tool</h2>
+      <button id="btnPainter" class="btn btn-dark">🖼 Upload Room & Try Colors</button>
+      <div id="painterModal" class="modal" style="display:none;">
+        <div class="modal-content">
+          <span id="closePainter" style="cursor:pointer;color:red;float:right;">❌</span>
+          <h3>🎨 Try Wall Colors</h3>
+          <input type="file" id="roomPhoto" accept="image/*">
+          <input type="color" id="colorPicker" value="#ff0000">
+          <canvas id="roomCanvas" style="width:100%;margin-top:10px;"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- 📏 Plumber Tool -->
+    <section class="card">
+      <h2>📏 Plumber Tool</h2>
+      <button id="btnPlumber" class="btn btn-dark">📸 Measure with Camera</button>
+      <div id="plumberModal" class="modal" style="display:none;">
+        <div class="modal-content">
+          <span id="closePlumber" style="cursor:pointer;color:red;float:right;">❌</span>
+          <h3>📏 Live Measurement</h3>
+          <video id="cameraStream" autoplay style="width:100%;border-radius:8px;"></video>
+          <p>👉 Point your camera at objects to estimate distance (basic AR coming soon)</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 🏬 Store Catalog -->
+    <section class="card">
+      <h2>🏬 Store Catalog</h2>
+      <div id="storeCatalog"></div>
+    </section>
+  </main>
+
+  <!-- Firebase + Map Logic -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/map/map.js"></script>
+  <script>
+    const auth = firebase.auth();
+    const dbRef = db.collection("stores");
+
+    // ✅ Redirect if not logged in
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = "login.html";
+      } else {
+        loadCatalog();
+      }
+    });
+
+    // ✅ Load all store products
+    function loadCatalog() {
+      const catalogDiv = document.getElementById("storeCatalog");
+      catalogDiv.innerHTML = "";
+
+      dbRef.get().then(stores => {
+        stores.forEach(storeDoc => {
+          const store = storeDoc.data();
+          const storeBlock = document.createElement("div");
+          storeBlock.className = "card";
+          storeBlock.innerHTML = `
+            <h3>🏪 ${store.name || "Unnamed Store"}</h3>
+            <p>📞 ${store.phone || "N/A"}</p>
+            <p>${store.desc || ""}</p>
+            <div id="products_${storeDoc.id}" class="catalogGallery"></div>
+          `;
+          catalogDiv.appendChild(storeBlock);
+
+          // Load products for this store
+          storeDoc.ref.collection("products").get().then(products => {
+            const productDiv = document.getElementById("products_" + storeDoc.id);
+            products.forEach(pDoc => {
+              const p = pDoc.data();
+              const div = document.createElement("div");
+              div.className = "catalog-photo";
+              div.innerHTML = `
+                <img src="${p.photo}" class="catalog-photo" style="max-width:120px;border-radius:8px;">
+                <p><b>${p.name}</b><br>Rs. ${p.price}</p>
+              `;
+              productDiv.appendChild(div);
+            });
+          });
+        });
+      });
+    }
+
+    // ✅ Logout
+    function logout() {
+      auth.signOut().then(() => {
+        window.location.href = "login.html";
+      });
+    }
+  </script>
+
+  <!-- Modal Styling (dark theme) -->
+  <style>
+    .modal {
+      position: fixed;
+      z-index: 9999;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: #1e1e1e;
+      color: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 420px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.6);
+    }
+    .modal-content input,
+    .modal-content textarea,
+    .modal-content button,
+    .modal-content select {
+      width: 100%;
+      margin: 8px 0;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+  </style>
 </body>
 </html>

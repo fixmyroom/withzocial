@@ -4,17 +4,126 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FixMyRoom 🚀</title>
-  <!-- ✅ Fixed CSS path -->
-  <link rel="stylesheet" href="./css/styles.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f0f4f9, #e0f7fa);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 600px;
+      background: #fff;
+      padding: 40px 20px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      animation: fadeIn 0.6s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Logo */
+    .logo {
+      max-width: 140px;
+      height: auto;
+      margin-bottom: 15px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      color: #333;
+      margin: 10px 0;
+    }
+
+    .slogan {
+      font-size: 1.2rem;
+      margin: 10px 0 25px;
+      color: #555;
+    }
+
+    /* Main button */
+    .btn-main {
+      display: inline-block;
+      background: #1db954;
+      color: #fff;
+      padding: 14px 28px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 12px;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: all 0.25s ease-in-out;
+    }
+    .btn-main:hover {
+      background: #17a84d;
+      box-shadow: 0 0 14px #1db954;
+      transform: translateY(-2px);
+    }
+
+    /* Social links */
+    .social-links {
+      margin-top: 30px;
+    }
+    .social-links a {
+      display: inline-block;
+      margin: 10px 12px;
+      padding: 12px 22px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: bold;
+      color: #fff;
+      font-size: 1rem;
+      transition: all 0.25s ease-in-out;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+    }
+
+    /* WhatsApp */
+    .whatsapp {
+      background: #25D366;
+    }
+    .whatsapp:hover {
+      background: #1db954;
+      box-shadow: 0 0 12px #25D366;
+      transform: translateY(-2px);
+    }
+
+    /* Facebook */
+    .facebook {
+      background: #1877F2;
+    }
+    .facebook:hover {
+      background: #0d5adb;
+      box-shadow: 0 0 12px #1877F2;
+      transform: translateY(-2px);
+    }
+  </style>
 </head>
 <body>
-  <div class="container center">
-    <!-- ✅ Fixed logo path -->
-    <img src="./img/logo.png" alt="FixMyRoom Logo" class="logo">
+  <div class="container">
+    <!-- Logo -->
+    <img src="img/logo.png" alt="FixMyRoom Logo" class="logo">
+
+    <!-- Title -->
     <h1>FixMyRoom 🛠️</h1>
     <p class="slogan">Book workers & stores near you in real-time</p>
-    <!-- ✅ Fixed link path -->
-    <a href="./login.html" class="btn">🚀 Get Started</a>
+
+    <!-- Main button -->
+    <a href="login.html" class="btn-main">🚀 Get Started</a>
+
+    <!-- Contact Links -->
+    <div class="social-links">
+      <a href="https://wa.me/9779851151294" target="_blank" class="whatsapp">💬 WhatsApp</a>
+      <a href="https://www.facebook.com/people/ZocialPainter/61578207554465/" target="_blank" class="facebook">📘 Facebook</a>
+    </div>
   </div>
 </body>
 </html>

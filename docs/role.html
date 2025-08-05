@@ -3,22 +3,75 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Choose Role | FixMyRoom</title>
+  <title>FixMyRoom - Choose Role</title>
   <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <div class="container center">
-    <h1>👋 Welcome</h1>
-    <p>Select your role:</p>
+    <!-- Logo -->
+    <img src="img/logo.png" class="logo" alt="FixMyRoom Logo">
 
-    <button class="btn" onclick="go('dashboard.html')">🏠 Customer</button>
-    <button class="btn" onclick="go('worker.html')">🧑‍🔧 Worker</button>
-    <button class="btn" onclick="go('store.html')">🏪 Store</button>
-    <button class="btn" onclick="go('admin.html')">🛠️ Admin</button>
+    <!-- Title -->
+    <h1>✨ Choose Your Role</h1>
+    <p class="slogan">Select how you want to use <b>FixMyRoom</b> 🚀</p>
+
+    <!-- Role Buttons -->
+    <div class="card">
+      <button class="btn btn-primary" onclick="setRole('customer')">👤 I am a Customer</button>
+      <button class="btn btn-dark" onclick="setRole('worker')">🛠️ I am a Worker</button>
+      <button class="btn" style="background:#1877F2" onclick="setRole('store')">🏬 I am a Store</button>
+    </div>
+
+    <!-- Logout -->
+    <button class="btn btn-danger" onclick="logout()">🚪 Logout</button>
+
+    <!-- Back link -->
+    <p class="links" style="margin-top:12px;">
+      <a href="index.html">🏠 Back to Home</a>
+    </p>
   </div>
 
+  <script src="js/firebase-config.js"></script>
   <script>
-    function go(page) { window.location.href = page; }
+    const auth = firebase.auth();
+    const dbRef = db.collection("users");
+
+    // ✅ Redirect if not logged in
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = "login.html";
+      }
+    });
+
+    // ✅ Set role in Firestore & redirect
+    function setRole(role) {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      dbRef.doc(user.uid).set({
+        email: user.email,
+        role: role,
+        updatedAt: Date.now()
+      }, { merge: true })
+      .then(() => {
+        if (role === "customer") window.location.href = "dashboard.html";
+        if (role === "worker") window.location.href = "worker.html";
+        if (role === "store") window.location.href = "store.html";
+      })
+      .catch(err => alert("❌ " + err.message));
+    }
+
+    // ✅ Logout
+    function logout() {
+      auth.signOut().then(() => {
+        window.location.href = "login.html";
+      });
+    }
   </script>
 </body>
 </html>
