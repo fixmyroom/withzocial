@@ -1,0 +1,75 @@
+{
+  "workers": {
+    "worker1": {
+      "name": "Ram Bahadur",
+      "skill": "Plumber 👨‍🔧",
+      "lat": 27.7172,
+      "lng": 85.3240,
+      "phone": "+9779812345678",
+      "onWheels": true,
+      "approved": true
+    },
+    "worker2": {
+      "name": "Sita Lama",
+      "skill": "Painter 🎨",
+      "lat": 27.7150,
+      "lng": 85.3235,
+      "phone": "+9779823456789",
+      "onWheels": false,
+      "approved": true
+    },
+    "worker3": {
+      "name": "Hari Shrestha",
+      "skill": "Electrician ⚡",
+      "lat": 27.7160,
+      "lng": 85.3250,
+      "phone": "+9779801234567",
+      "onWheels": true,
+      "approved": true
+    }
+  },
+
+  "stores": {
+    "store1": {
+      "name": "Sharma Hardware 🏬",
+      "lat": 27.7175,
+      "lng": 85.3230,
+      "phone": "+9779801122334",
+      "products": [
+        "https://firebasestorage.googleapis.com/v0/b/fixmyroom-7a518.appspot.com/o/products%2Fhammer.jpg?alt=media",
+        "https://firebasestorage.googleapis.com/v0/b/fixmyroom-7a518.appspot.com/o/products%2Fpaint.jpg?alt=media"
+      ],
+      "approved": true
+    },
+    "store2": {
+      "name": "KTM Tools & Paints 🏬",
+      "lat": 27.7168,
+      "lng": 85.3260,
+      "phone": "+9779809988776",
+      "products": [
+        "https://firebasestorage.googleapis.com/v0/b/fixmyroom-7a518.appspot.com/o/products%2Fdrill.jpg?alt=media",
+        "https://firebasestorage.googleapis.com/v0/b/fixmyroom-7a518.appspot.com/o/products%2Fbrush.jpg?alt=media"
+      ],
+      "approved": true
+    }
+  },
+
+  "requests": {
+    "sampleRequest1": {
+      "customer": "+9779851151264",
+      "type": "worker",
+      "worker": "worker1",
+      "store": null,
+      "timestamp": "2025-08-05T10:00:00Z",
+      "status": "pending"
+    },
+    "sampleRequest2": {
+      "customer": "+9779851151264",
+      "type": "store",
+      "worker": null,
+      "store": "store1",
+      "timestamp": "2025-08-05T11:00:00Z",
+      "status": "pending"
+    }
+  }
+}

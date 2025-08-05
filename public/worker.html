@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Worker Dashboard 🧑‍🔧</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    #requests {
+      margin-top: 20px;
+      text-align: left;
+      padding: 10px;
+      background: #222;
+      border-radius: 8px;
+    }
+    .req {
+      border-bottom: 1px solid #444;
+      padding: 10px 0;
+    }
+    .req button {
+      margin: 5px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .accept { background: #1db954; color: white; }
+    .reject { background: #ff5252; color: white; }
+  </style>
+</head>
+<body>
+  <div class="container center">
+    <h1>🧑‍🔧 Worker Dashboard</h1>
+    <p>📍 Your location is updating live...</p>
+    <div id="requests">
+      <h3>📩 Incoming Requests</h3>
+      <div id="reqList"></div>
+    </div>
+  </div>
+
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/worker/worker.js"></script>
+</body>
+</html>

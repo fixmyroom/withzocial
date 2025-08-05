@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Choose Role | FixMyRoom</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="container center">
+    <h1>👋 Welcome</h1>
+    <p>Select your role:</p>
+
+    <button class="btn" onclick="go('dashboard.html')">🏠 Customer</button>
+    <button class="btn" onclick="go('worker.html')">🧑‍🔧 Worker</button>
+    <button class="btn" onclick="go('store.html')">🏪 Store</button>
+    <button class="btn" onclick="go('admin.html')">🛠️ Admin</button>
+  </div>
+
+  <script>
+    function go(page) { window.location.href = page; }
+  </script>
+</body>
+</html>

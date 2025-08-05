@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel 🛠️</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .tab {
+      margin: 10px;
+      padding: 10px;
+      background: #222;
+      border-radius: 8px;
+      color: #fff;
+    }
+    h2 {
+      margin-top: 20px;
+      color: #1db954;
+    }
+    table {
+      width: 100%;
+      margin-top: 10px;
+      border-collapse: collapse;
+      background: #333;
+      color: #fff;
+    }
+    th, td {
+      border: 1px solid #444;
+      padding: 6px;
+      text-align: left;
+    }
+    button {
+      background: #ff5252;
+      border: none;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🛠️ Admin Panel</h1>
+
+    <div class="tab">
+      <h2>👤 Users</h2>
+      <table id="usersTable"><tr><th>Name</th><th>Email</th><th>Phone</th><th>Action</th></tr></table>
+    </div>
+
+    <div class="tab">
+      <h2>🧑‍🔧 Workers</h2>
+      <table id="workersTable"><tr><th>Name</th><th>Skill</th><th>Phone</th><th>Action</th></tr></table>
+    </div>
+
+    <div class="tab">
+      <h2>🏪 Stores</h2>
+      <table id="storesTable"><tr><th>Name</th><th>Category</th><th>Phone</th><th>Action</th></tr></table>
+    </div>
+
+    <div class="tab">
+      <h2>📩 Requests</h2>
+      <table id="reqsTable"><tr><th>Customer</th><th>Worker</th><th>Status</th><th>Action</th></tr></table>
+    </div>
+  </div>
+
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/admin/admin.js"></script>
+</body>
+</html>

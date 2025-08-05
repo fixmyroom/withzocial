@@ -1,61 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FixMyRoom</title>
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="style.css?v=1.1" />
-
-  <!-- Leaflet CSS (Map) -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet/dist/leaflet.css"
-  />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FixMyRoom 🚀</title>
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <!-- Header -->
-  <header>
-    <h1>🛠 FixMyRoom</h1>
-    <div id="authControls">
-      <button id="loginBtn">Login with Google</button>
-      <button id="logoutBtn" style="display: none">Logout</button>
-    </div>
-  </header>
-
-  <!-- Main Content -->
-  <div id="main">
-    <!-- Map -->
-    <div id="map"></div>
-
-    <!-- Sidebar -->
-    <div id="sidebar">
-      <h2>Service Providers</h2>
-      <p id="loadingMsg">Loading providers...</p>
-      <div id="providerList"></div>
-
-      <!-- Provider Registration Form (only for admin) -->
-      <div id="providerFormContainer" style="display: none">
-        <h3>Add Your Service</h3>
-        <form id="providerForm">
-          <input type="text" name="name" placeholder="Business Name" required />
-          <input type="text" name="type" placeholder="Service Type (e.g. Carpenter)" required />
-          <input type="text" name="address" placeholder="Address" required />
-          <input type="text" name="phone" placeholder="Phone Number" required />
-          <input type="text" name="price" placeholder="Price (e.g. NPR 2000 / item)" required />
-          <input type="number" step="0.0001" name="lat" placeholder="Latitude" required />
-          <input type="number" step="0.0001" name="lng" placeholder="Longitude" required />
-          <button type="submit">Submit</button>
-        </form>
-      </div>
-    </div>
+  <div class="container center">
+    <img src="img/logo.png" alt="FixMyRoom Logo" class="logo">
+    <h1>FixMyRoom 🛠️</h1>
+    <p class="slogan">Book workers & stores near you in real-time</p>
+    <a href="login.html" class="btn">🚀 Get Started</a>
   </div>
-
-  <!-- Scripts -->
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script type="module" src="firebase-config.js?v=1.1"></script>
-  <script type="module" src="user.js?v=1.1"></script>
-  <script type="module" src="app.js?v=1.1"></script>
 </body>
 </html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Store Dashboard 🏪</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .form-box {
+      background: #222;
+      color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 400px;
+      margin: 30px auto;
+      text-align: left;
+    }
+    .form-box input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 6px;
+    }
+    button {
+      background: #1db954;
+      border: none;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏪 Store Dashboard</h1>
+    <div class="form-box">
+      <label>Store Name:</label>
+      <input type="text" id="storeName" placeholder="Sharma Hardware">
+
+      <label>Category:</label>
+      <input type="text" id="storeCategory" placeholder="Hardware / Paint / Electrical">
+
+      <label>Phone:</label>
+      <input type="text" id="storePhone" placeholder="98XXXXXXXX">
+
+      <button onclick="saveStore()">💾 Save Store</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/store/store.js"></script>
+</body>
+</html>

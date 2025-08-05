@@ -1,0 +1,65 @@
+{
+  "workers": {
+    "worker1": {
+      "name": "Hari",
+      "skill": "Plumber",
+      "phone": "9800000001",
+      "price": 1500,
+      "availability": "Available",
+      "location": { "lat": 27.7172, "lng": 85.3240 }
+    },
+    "worker2": {
+      "name": "Sita",
+      "skill": "Electrician",
+      "phone": "9800000002",
+      "price": 2000,
+      "availability": "Busy",
+      "location": { "lat": 27.7036, "lng": 85.3222 }
+    },
+    "worker3": {
+      "name": "Ram",
+      "skill": "Painter",
+      "phone": "9800000003",
+      "price": 1200,
+      "availability": "Available",
+      "location": { "lat": 27.7150, "lng": 85.3120 }
+    },
+    "worker4": {
+      "name": "Kiran",
+      "skill": "Carpenter",
+      "phone": "9800000004",
+      "price": 2500,
+      "availability": "Available",
+      "location": { "lat": 27.7215, "lng": 85.3360 }
+    }
+  },
+  "stores": {
+    "store1": {
+      "name": "Sharma Hardware",
+      "phone": "9800000010",
+      "category": "Hardware",
+      "location": { "lat": 27.7200, "lng": 85.3300 }
+    },
+    "store2": {
+      "name": "Nepal Paint Center",
+      "phone": "9800000011",
+      "category": "Paints",
+      "location": { "lat": 27.7090, "lng": 85.3250 }
+    }
+  },
+  "requests": {
+    "req1": {
+      "customer": "Pratik",
+      "worker": "Hari",
+      "timestamp": 1754271646184,
+      "status": "Pending"
+    }
+  },
+  "users": {
+    "user1": {
+      "name": "Pratik",
+      "phone": "9851151294",
+      "role": "Customer"
+    }
+  }
+}
