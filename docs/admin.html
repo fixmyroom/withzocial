@@ -6,11 +6,6 @@
   <title>FixMyRoom - Admin Panel</title>
   <link rel="stylesheet" href="css/styles.css">
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
   <style>
     .table-container {
       width: 100%;
@@ -69,6 +64,7 @@
       font-size: 1.2rem;
       margin: 0;
       text-align: center;
+      color: #fff;
     }
     .logout-btn {
       position: absolute;
@@ -101,6 +97,7 @@
     main {
       margin-top: 80px;
       padding: 15px;
+      color: #fff;
     }
   </style>
 </head>
@@ -108,7 +105,7 @@
   <header>
     <img src="img/logo.png" alt="FixMyRoom" class="logo">
     <h1>⚙️ Admin Panel</h1>
-    <button class="logout-btn" onclick="logout()">🚪</button>
+    <button class="logout-btn" id="logoutBtn">🚪</button>
   </header>
 
   <main class="container">
@@ -186,11 +183,18 @@
     </section>
   </main>
 
-  <script src="js/firebase-config.js"></script>
-  <script>
-    const auth = firebase.auth();
+  <!-- ✅ Firebase (modular) -->
+  <script type="module">
+    import { auth, db } from "./firebase.js";
+    import { 
+      onAuthStateChanged, signOut 
+    } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+    import { 
+      collection, getDocs, query, where, updateDoc, doc, orderBy 
+    } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
-    auth.onAuthStateChanged(user => {
+    // Protect page
+    onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = "login.html";
       } else {
@@ -201,105 +205,105 @@
       }
     });
 
-    function loadUsers() {
+    // 👥 Users
+    async function loadUsers() {
       const table = document.querySelector("#usersTable tbody");
       table.innerHTML = "";
-      db.collection("users").get().then(snapshot => {
-        snapshot.forEach(doc => {
-          const u = doc.data();
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${u.name || "-"}</td>
-            <td>${u.phone || "-"}</td>
-            <td>${u.role || "-"}</td>
-            <td>${u.isPremium ? "⭐ Yes" : "No"}</td>
-            <td>
-              <button class="${u.isPremium ? "remove" : "set"}" 
-                onclick="togglePremium('${doc.id}', ${!u.isPremium})">
-                ${u.isPremium ? "❌ Remove Premium" : "⭐ Set Premium"}
-              </button>
-            </td>
-          `;
-          table.appendChild(tr);
-        });
+      const snapshot = await getDocs(collection(db, "users"));
+      snapshot.forEach(docSnap => {
+        const u = docSnap.data();
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${u.name || "-"}</td>
+          <td>${u.phone || "-"}</td>
+          <td>${u.role || "-"}</td>
+          <td>${u.isPremium ? "⭐ Yes" : "No"}</td>
+          <td>
+            <button class="${u.isPremium ? "remove" : "set"}"
+              onclick="togglePremium('${docSnap.id}', ${!u.isPremium})">
+              ${u.isPremium ? "❌ Remove Premium" : "⭐ Set Premium"}
+            </button>
+          </td>
+        `;
+        table.appendChild(tr);
       });
     }
 
-    function loadWorkers() {
+    // 🛠 Workers
+    async function loadWorkers() {
       const table = document.querySelector("#workersTable tbody");
       table.innerHTML = "";
-      db.collection("users").where("role", "in", ["painter","plumber","electrician"])
-        .get().then(snapshot => {
-          snapshot.forEach(doc => {
-            const w = doc.data();
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-              <td>${w.name || "-"}</td>
-              <td>${w.phone || "-"}</td>
-              <td>${w.price || "-"}</td>
-              <td>${w.isPremium ? "⭐ Yes" : "No"}</td>
-              <td>
-                <button class="${w.isPremium ? "remove" : "set"}"
-                  onclick="togglePremium('${doc.id}', ${!w.isPremium})">
-                  ${w.isPremium ? "❌ Remove Premium" : "⭐ Set Premium"}
-                </button>
-              </td>
-            `;
-            table.appendChild(tr);
-          });
-        });
+      const q = query(collection(db, "users"), where("role", "in", ["painter","plumber","electrician"]));
+      const snapshot = await getDocs(q);
+      snapshot.forEach(docSnap => {
+        const w = docSnap.data();
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${w.name || "-"}</td>
+          <td>${w.phone || "-"}</td>
+          <td>${w.price || "-"}</td>
+          <td>${w.isPremium ? "⭐ Yes" : "No"}</td>
+          <td>
+            <button class="${w.isPremium ? "remove" : "set"}"
+              onclick="togglePremium('${docSnap.id}', ${!w.isPremium})">
+              ${w.isPremium ? "❌ Remove Premium" : "⭐ Set Premium"}
+            </button>
+          </td>
+        `;
+        table.appendChild(tr);
+      });
     }
 
-    function togglePremium(uid, status) {
-      db.collection("users").doc(uid).update({ isPremium: Boolean(status) })
-        .then(() => {
-          alert("✅ Premium updated");
-          loadUsers();
-          loadWorkers();
-        })
-        .catch(err => alert("❌ " + err.message));
-    }
+    // ⭐ Toggle Premium
+    window.togglePremium = async function(uid, status) {
+      await updateDoc(doc(db, "users", uid), { isPremium: Boolean(status) });
+      alert("✅ Premium updated");
+      loadUsers();
+      loadWorkers();
+    };
 
-    function loadRequests() {
+    // 📩 Requests
+    async function loadRequests() {
       const table = document.querySelector("#requestsTable tbody");
       table.innerHTML = "";
-      db.collection("requests").orderBy("createdAt", "desc").get().then(snapshot => {
-        snapshot.forEach(doc => {
-          const r = doc.data();
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${r.name}</td>
-            <td>${r.phone}</td>
-            <td>${r.details}</td>
-            <td>${r.createdAt ? new Date(r.createdAt).toLocaleString() : "-"}</td>
-          `;
-          table.appendChild(tr);
-        });
+      const q = query(collection(db, "requests"), orderBy("createdAt", "desc"));
+      const snapshot = await getDocs(q);
+      snapshot.forEach(docSnap => {
+        const r = docSnap.data();
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${r.name}</td>
+          <td>${r.phone}</td>
+          <td>${r.details}</td>
+          <td>${r.createdAt ? new Date(r.createdAt.seconds * 1000).toLocaleString() : "-"}</td>
+        `;
+        table.appendChild(tr);
       });
     }
 
-    function loadStores() {
+    // 🏬 Stores
+    async function loadStores() {
       const table = document.querySelector("#storesTable tbody");
       table.innerHTML = "";
-      db.collection("stores").get().then(snapshot => {
-        snapshot.forEach(doc => {
-          const s = doc.data();
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${s.name || "-"}</td>
-            <td>${s.phone || "-"}</td>
-            <td>${s.desc || "-"}</td>
-          `;
-          table.appendChild(tr);
-        });
+      const snapshot = await getDocs(collection(db, "stores"));
+      snapshot.forEach(docSnap => {
+        const s = docSnap.data();
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${s.name || "-"}</td>
+          <td>${s.phone || "-"}</td>
+          <td>${s.desc || "-"}</td>
+        `;
+        table.appendChild(tr);
       });
     }
 
-    function logout() {
-      auth.signOut().then(() => {
+    // 🚪 Logout
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      signOut(auth).then(() => {
         window.location.href = "login.html";
       });
-    }
+    });
   </script>
 </body>
 </html>

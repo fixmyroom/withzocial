@@ -9,7 +9,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #111;
+      background: #000; /* Dark Uber-style */
       color: white;
       text-align: center;
       margin: 0;
@@ -18,7 +18,7 @@
     .login-box {
       max-width: 400px;
       margin: 100px auto;
-      background: #222;
+      background: #111;
       padding: 30px;
       border-radius: 10px;
       box-shadow: 0px 0px 10px rgba(0,0,0,0.6);
@@ -33,6 +33,7 @@
     button {
       width: 95%;
       padding: 12px;
+      margin-top: 10px;
       background: #28a745;
       color: white;
       border: none;
@@ -41,6 +42,8 @@
       font-size: 16px;
     }
     button:hover { background: #218838; }
+    #googleBtn { background: #db4437; }
+    #googleBtn:hover { background: #c23321; }
     .link {
       display: block;
       margin-top: 15px;
@@ -63,28 +66,40 @@
     </form>
 
     <div class="link" id="signupBtn">✨ Create Account</div>
+    <button id="googleBtn">🌐 Continue with Google</button>
     <a href="index.html" class="link">🏠 Back to Home</a>
   </div>
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase + Auth logic -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } 
-      from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+    import { auth, db } from "./firebase.js";
+    import { 
+      signInWithEmailAndPassword, createUserWithEmailAndPassword,
+      GoogleAuthProvider, signInWithPopup, onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+    import { doc, setDoc, serverTimestamp } 
+      from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
-    // ✅ Your Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyCSQXEh2Lvn2VQfLOUIAvfpWIFyC4rM-qs",
-      authDomain: "fixmyroom-7a518.firebaseapp.com",
-      projectId: "fixmyroom-7a518",
-      storageBucket: "fixmyroom-7a518.appspot.com",
-      messagingSenderId: "515188781683",
-      appId: "1:515188781683:web:21d074ae3a4910e0282815"
-    };
+    // Save user profile in Firestore
+    async function saveUser(user) {
+      if (!user) return;
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        email: user.email,
+        name: user.displayName || "",
+        phone: user.phoneNumber || "",
+        role: "customer",
+        isPremium: false,
+        createdAt: serverTimestamp()
+      }, { merge: true });
+    }
 
-    // Init Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+    // Auto-redirect if already logged in
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.location.href = "map.html";
+      }
+    });
 
     // Login handler
     document.getElementById("loginForm").addEventListener("submit", (e) => {
@@ -93,10 +108,7 @@
       const password = document.getElementById("password").value;
 
       signInWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-          alert("✅ Logged in!");
-          window.location.href = "map.html"; // redirect after login
-        })
+        .then((cred) => saveUser(cred.user).then(() => window.location.href = "map.html"))
         .catch((err) => alert("❌ " + err.message));
     });
 
@@ -106,12 +118,20 @@
       const password = document.getElementById("password").value;
 
       createUserWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-          alert("✅ Account created! You can now login.");
-        })
+        .then((cred) => saveUser(cred.user).then(() => {
+          alert("✅ Account created!");
+          window.location.href = "map.html";
+        }))
+        .catch((err) => alert("❌ " + err.message));
+    });
+
+    // Google login
+    document.getElementById("googleBtn").addEventListener("click", () => {
+      const provider = new GoogleAuthProvider();
+      signInWithPopup(auth, provider)
+        .then((cred) => saveUser(cred.user).then(() => window.location.href = "map.html"))
         .catch((err) => alert("❌ " + err.message));
     });
   </script>
-
 </body>
 </html>

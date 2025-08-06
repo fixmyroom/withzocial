@@ -6,6 +6,12 @@
   <title>FixMyRoom - Map</title>
   <link rel="stylesheet" href="css/styles.css">
   <style>
+    body {
+      margin: 0;
+      background: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
     #map {
       width: 100%;
       height: 85vh;
@@ -60,22 +66,18 @@
     #roleFilter {
       width: 200px;
       padding: 8px;
-      margin-bottom: 10px;
+      margin: 10px auto;
+      display: block;
       border-radius: 6px;
       border: 1px solid #ccc;
     }
   </style>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <header>
     <img src="img/logo.png" alt="FixMyRoom Logo" class="logo">
     <h2>🗺️ Workers Map</h2>
-    <button class="logout-btn" onclick="logout()">🚪</button>
+    <button class="logout-btn" id="logoutBtn">🚪</button>
   </header>
 
   <main class="container">
@@ -93,21 +95,25 @@
     </div>
   </main>
 
-  <!-- Firebase Config -->
-  <script src="js/firebase-config.js"></script>
-  <script>
-    const auth = firebase.auth();
-    auth.onAuthStateChanged(user => {
+  <!-- Firebase -->
+  <script type="module">
+    import { auth } from "./firebase.js";
+    import { onAuthStateChanged, signOut } 
+      from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+
+    // Protect page
+    onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = "login.html";
       }
     });
 
-    function logout() {
-      auth.signOut().then(() => {
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      signOut(auth).then(() => {
         window.location.href = "login.html";
       });
-    }
+    });
   </script>
 
   <!-- Google Maps API -->
