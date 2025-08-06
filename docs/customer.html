@@ -9,20 +9,141 @@
   <link rel="stylesheet" href="css/dashboard.css" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- Firebase + Leaflet -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+  <!-- Firebase Modular SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getStorage } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+    import { firebaseConfig } from './js/firebase-config.js';
+    import { showAlert } from './js/utils.js';
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    const storeCatalog = document.getElementById("storeCatalog");
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        location.href = "login.html";
+      } else {
+        await loadCatalog();
+      }
+    });
+
+    async function loadCatalog() {
+      storeCatalog.innerHTML = "";
+      const storesSnap = await getDocs(collection(db, "stores"));
+      storesSnap.forEach(async (storeDoc) => {
+        const store = storeDoc.data();
+        const storeId = storeDoc.id;
+
+        const block = document.createElement("div");
+        block.className = "card";
+        block.innerHTML = `
+          <h3>🏪 ${store.name || "Unnamed Store"}</h3>
+          <p>📞 ${store.phone || "N/A"}</p>
+          <p>${store.desc || ""}</p>
+          <div id="products_${storeId}" class="catalogGallery"></div>`;
+        storeCatalog.appendChild(block);
+
+        const productsSnap = await getDocs(collection(db, "stores", storeId, "products"));
+        const pDiv = document.getElementById("products_" + storeId);
+        productsSnap.forEach(pDoc => {
+          const p = pDoc.data();
+          const item = document.createElement("div");
+          item.className = "catalog-photo";
+          item.innerHTML = `<img src="${p.photo}" class="catalog-photo" />
+                            <p><b>${p.name}</b><br>Rs. ${p.price}</p>`;
+          pDiv.appendChild(item);
+        });
+      });
+    }
+
+    // Submit Quick Request
+    document.getElementById("submitRequest").onclick = async () => {
+      const name = document.getElementById("reqName").value.trim();
+      const phone = document.getElementById("reqPhone").value.trim();
+      const details = document.getElementById("reqDetails").value.trim();
+
+      if (!name || !phone || !details) {
+        return showAlert("error", "⚠️ Please fill all fields.");
+      }
+
+      try {
+        await addDoc(collection(db, "requests"), {
+          name, phone, details,
+          createdAt: Date.now()
+        });
+        showAlert("success", "✅ Request sent successfully!");
+        document.getElementById("reqName").value = "";
+        document.getElementById("reqPhone").value = "";
+        document.getElementById("reqDetails").value = "";
+      } catch (err) {
+        showAlert("error", "❌ " + err.message);
+      }
+    };
+
+    // Logout
+    window.logout = async () => {
+      await signOut(auth);
+      location.href = "login.html";
+    };
+
+    // Painter Tool
+    window.previewRoomImage = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.getElementById("colorCanvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    };
+
+    window.applyColor = () => {
+      const color = document.getElementById("colorPicker").value;
+      const canvas = document.getElementById("colorCanvas");
+      const ctx = canvas.getContext("2d");
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    };
+
+    // Plumber Tool
+    window.startMeasuring = () => {
+      const video = document.getElementById("camera");
+      navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+        video.srcObject = stream;
+      }).catch(() => {
+        showAlert("error", "❌ Camera access denied.");
+      });
+    };
+
+    // Modal
+    document.getElementById("closeRequest").onclick = () => {
+      document.getElementById("requestModal").style.display = "none";
+    };
+  </script>
+
+  <!-- Leaflet.js -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Register service worker -->
+  <!-- Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker.js');
-      });
+      navigator.serviceWorker.register('service-worker.js');
     }
   </script>
 </head>
@@ -34,7 +155,7 @@
   </header>
 
   <main>
-    <!-- 📍 Live Map -->
+    <!-- 📍 Map -->
     <section>
       <h2>📍 Workers & Stores Nearby</h2>
       <input type="text" id="searchInput" placeholder="🔍 Search by name or role" oninput="searchMap()" />
@@ -72,7 +193,7 @@
     </section>
   </main>
 
-  <!-- 📩 Modal Request Form -->
+  <!-- 📩 Modal -->
   <div id="requestModal" class="modal">
     <div class="modal-content">
       <span id="closeRequest" class="close">❌</span>
@@ -88,116 +209,5 @@
       </form>
     </div>
   </div>
-
-  <script src="js/firebase-config.js"></script>
-  <script src="js/map/map.js"></script>
-  <script>
-    const auth = firebase.auth();
-    const dbRef = db.collection("stores");
-
-    auth.onAuthStateChanged(user => {
-      if (!user) {
-        location.href = "login.html";
-      } else {
-        loadCatalog();
-      }
-    });
-
-    function loadCatalog() {
-      const catalogDiv = document.getElementById("storeCatalog");
-      catalogDiv.innerHTML = "";
-
-      dbRef.get().then(stores => {
-        stores.forEach(storeDoc => {
-          const store = storeDoc.data();
-          const block = document.createElement("div");
-          block.className = "card";
-          block.innerHTML = `<h3>🏪 ${store.name || "Unnamed Store"}</h3>
-                             <p>📞 ${store.phone || "N/A"}</p>
-                             <p>${store.desc || ""}</p>
-                             <div id="products_${storeDoc.id}" class="catalogGallery"></div>`;
-          catalogDiv.appendChild(block);
-
-          storeDoc.ref.collection("products").get().then(products => {
-            const pDiv = document.getElementById("products_" + storeDoc.id);
-            products.forEach(pDoc => {
-              const p = pDoc.data();
-              const item = document.createElement("div");
-              item.className = "catalog-photo";
-              item.innerHTML = `<img src="${p.photo}" class="catalog-photo" />
-                                <p><b>${p.name}</b><br>Rs. ${p.price}</p>`;
-              pDiv.appendChild(item);
-            });
-          });
-        });
-      });
-    }
-
-    // Quick request
-    document.getElementById("submitRequest").onclick = () => {
-      const name = document.getElementById("reqName").value;
-      const phone = document.getElementById("reqPhone").value;
-      const details = document.getElementById("reqDetails").value;
-
-      if (!name || !phone || !details) {
-        return alert("⚠️ Fill all fields");
-      }
-
-      db.collection("requests").add({
-        name, phone, details,
-        createdAt: Date.now()
-      }).then(() => {
-        alert("✅ Request sent!");
-      }).catch(err => alert("❌ " + err.message));
-    };
-
-    // Logout
-    function logout() {
-      auth.signOut().then(() => location.href = "login.html");
-    }
-
-    // Painter tool
-    function previewRoomImage(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.getElementById("colorCanvas");
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0);
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function applyColor() {
-      const color = document.getElementById("colorPicker").value;
-      const canvas = document.getElementById("colorCanvas");
-      const ctx = canvas.getContext("2d");
-      ctx.globalAlpha = 0.5;
-      ctx.fillStyle = color;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-
-    // Plumber tool
-    function startMeasuring() {
-      const video = document.getElementById("camera");
-      navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-        video.srcObject = stream;
-      }).catch(() => {
-        alert("Camera access denied.");
-      });
-    }
-
-    // Close modal
-    document.getElementById("closeRequest").onclick = () => {
-      document.getElementById("requestModal").style.display = "none";
-    };
-  </script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FixMyRoom - Worker Dashboard</title>
 
   <!-- PWA -->
@@ -88,122 +88,20 @@
       text-align: left;
     }
   </style>
-
-  <!-- Firebase Modular -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-    import { firebaseConfig } from './js/firebase-config.js';
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    const usersRef = collection(db, "users");
-    const requestsRef = collection(db, "requests");
-
-    // Auth check
-    onAuthStateChanged(auth, user => {
-      if (!user) {
-        window.location.href = "login.html";
-      } else {
-        loadProfile(user.uid);
-        listenRequests();
-        startLocationTracking(user.uid);
-      }
-    });
-
-    // Save profile
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById("saveProfile").onclick = async () => {
-        const user = auth.currentUser;
-        if (!user) return;
-
-        const data = {
-          name: document.getElementById("workerName").value,
-          phone: document.getElementById("workerPhone").value,
-          price: document.getElementById("workerPrice").value,
-          updatedAt: Date.now()
-        };
-
-        try {
-          await setDoc(doc(db, "users", user.uid), data, { merge: true });
-          alert("✅ Profile saved");
-        } catch (err) {
-          alert("❌ " + err.message);
-        }
-      };
-    });
-
-    // Load profile
-    async function loadProfile(uid) {
-      const docSnap = await getDoc(doc(db, "users", uid));
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        document.getElementById("workerName").value = data.name || "";
-        document.getElementById("workerPhone").value = data.phone || "";
-        document.getElementById("workerPrice").value = data.price || "";
-      }
-    }
-
-    // Location tracking
-    function startLocationTracking(uid) {
-      if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(async pos => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          await setDoc(doc(db, "users", uid), {
-            location: { lat, lng, updated: Date.now() }
-          }, { merge: true });
-        });
-      }
-    }
-
-    // Listen for requests
-    function listenRequests() {
-      const q = query(requestsRef, orderBy("createdAt", "desc"));
-      onSnapshot(q, snapshot => {
-        const table = document.querySelector("#requestsTable tbody");
-        table.innerHTML = "";
-        snapshot.forEach(doc => {
-          const r = doc.data();
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${r.details || "No details"}</td>
-            <td>${r.createdAt ? new Date(r.createdAt).toLocaleString() : ""}</td>
-          `;
-          table.appendChild(tr);
-        });
-      });
-    }
-
-    // Logout
-    window.logout = function () {
-      signOut(auth).then(() => window.location.href = "login.html");
-    };
-
-    // Service Worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js')
-        .then(() => console.log("✅ SW registered"))
-        .catch(e => console.error("SW error", e));
-    }
-  </script>
 </head>
 <body>
   <header>
-    <img src="img/logo.png" alt="FixMyRoom" class="logo" />
+    <img src="img/logo.png" alt="FixMyRoom" class="logo" onerror="this.src='img/default-user.png';"/>
     <h1>🛠 Worker Dashboard</h1>
-    <button class="btn btn-danger" onclick="logout()">🚪 Logout</button>
+    <button class="btn btn-danger" id="logoutBtn">🚪 Logout</button>
   </header>
 
   <main class="container">
     <section class="card">
       <h2>👤 My Profile</h2>
       <input type="text" id="workerName" placeholder="Your Name" />
-      <input type="text" id="workerPhone" placeholder="Your Phone" />
-      <input type="number" id="workerPrice" placeholder="💰 Price per service" />
+      <input type="text" id="workerPhone" placeholder="Your Phone" inputmode="tel" />
+      <input type="number" id="workerPrice" placeholder="💰 Price per service" inputmode="numeric" />
       <button id="saveProfile" class="btn btn-primary">💾 Save Profile</button>
     </section>
 
@@ -225,5 +123,126 @@
       </table>
     </section>
   </main>
+
+  <!-- Firebase compat version -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="js/firebase-config.js"></script>
+
+  <!-- Main Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const auth = firebase.auth();
+      const db = firebase.firestore();
+
+      const saveBtn = document.getElementById("saveProfile");
+      const logoutBtn = document.getElementById("logoutBtn");
+
+      auth.onAuthStateChanged(async user => {
+        if (!user) {
+          window.location.href = "login.html";
+        } else {
+          await loadProfile(user.uid);
+          listenRequests();
+          startLocationTracking(user.uid);
+        }
+      });
+
+      saveBtn.addEventListener("click", async () => {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const data = {
+          name: document.getElementById("workerName").value.trim(),
+          phone: document.getElementById("workerPhone").value.trim(),
+          price: parseFloat(document.getElementById("workerPrice").value.trim()) || 0,
+          updatedAt: Date.now()
+        };
+
+        try {
+          await db.collection("users").doc(user.uid).set(data, { merge: true });
+          alert("✅ Profile saved");
+        } catch (err) {
+          alert("❌ " + err.message);
+        }
+      });
+
+      logoutBtn.addEventListener("click", () => {
+        auth.signOut().then(() => window.location.href = "login.html");
+      });
+
+      async function loadProfile(uid) {
+        try {
+          const docSnap = await db.collection("users").doc(uid).get();
+          if (docSnap.exists) {
+            const data = docSnap.data();
+            document.getElementById("workerName").value = data.name || "";
+            document.getElementById("workerPhone").value = data.phone || "";
+            document.getElementById("workerPrice").value = data.price || "";
+          }
+        } catch (err) {
+          console.error("❌ Failed to load profile:", err.message);
+        }
+      }
+
+      function startLocationTracking(uid) {
+        if (navigator.geolocation) {
+          navigator.geolocation.watchPosition(async pos => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            try {
+              await db.collection("users").doc(uid).set({
+                location: { lat, lng, updated: Date.now() }
+              }, { merge: true });
+            } catch (err) {
+              console.error("❌ Location update failed:", err.message);
+            }
+          }, err => {
+            console.warn("⚠️ Geolocation denied or failed", err.message);
+          }, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          });
+        }
+      }
+
+      function listenRequests() {
+        db.collection("requests").orderBy("createdAt", "desc")
+          .onSnapshot(snapshot => {
+            const table = document.querySelector("#requestsTable tbody");
+            table.innerHTML = "";
+
+            if (snapshot.empty) {
+              const tr = document.createElement("tr");
+              tr.innerHTML = `<td colspan="2">No requests found</td>`;
+              table.appendChild(tr);
+            }
+
+            snapshot.forEach(doc => {
+              const r = doc.data();
+              const tr = document.createElement("tr");
+              tr.innerHTML = `
+                <td>${r.details || "No details"}</td>
+                <td>${r.createdAt ? new Date(r.createdAt).toLocaleString() : ""}</td>
+              `;
+              table.appendChild(tr);
+            });
+          }, err => {
+            console.error("❌ Error loading requests:", err.message);
+          });
+      }
+
+      // Service worker registration
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then(() => console.log("✅ Service Worker registered"))
+          .catch(e => console.error("❌ SW error", e));
+      }
+    });
+  </script>
 </body>
 </html>

@@ -113,7 +113,7 @@
     <div id="map"></div>
   </main>
 
-  <!-- Firebase Config (Compat) -->
+  <!-- Firebase Config (Compat SDK) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -121,6 +121,9 @@
 
   <!-- Firebase Init -->
   <script src="js/firebase-config.js"></script>
+
+  <!-- Alert Utility -->
+  <script src="js/utils.js"></script>
 
   <!-- Leaflet.js -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -139,6 +142,8 @@
     document.getElementById("logoutBtn").addEventListener("click", () => {
       firebase.auth().signOut().then(() => {
         location.href = "login.html";
+      }).catch(err => {
+        showAlert("error", "Logout failed");
       });
     });
   </script>

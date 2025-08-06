@@ -7,7 +7,7 @@
 
   <!-- PWA Essentials -->
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="/img/logo.png" type="image/png" />
+  <link rel="icon" href="img/logo.png" type="image/png" />
   <meta name="theme-color" content="#1db954" />
 
   <!-- Styles -->
@@ -113,10 +113,10 @@
     </div>
   </div>
 
-  <!-- Service Worker Registration -->
+  <!-- ✅ Service Worker Registration (GitHub Pages Compatible) -->
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js')
+      navigator.serviceWorker.register('./service-worker.js')
         .then(reg => console.log("✅ Service Worker registered"))
         .catch(err => console.error("❌ SW registration failed", err));
     }

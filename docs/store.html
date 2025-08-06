@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FixMyRoom - Store Dashboard</title>
   <link rel="stylesheet" href="css/styles.css">
 
@@ -75,18 +75,12 @@
       margin-bottom: 6px;
     }
   </style>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 </head>
 <body>
   <header>
-    <img src="img/logo.png" alt="FixMyRoom" class="logo">
+    <img src="img/logo.png" alt="FixMyRoom" class="logo" />
     <h1>🏬 Store Dashboard</h1>
-    <button onclick="logout()">🚪 Logout</button>
+    <button id="logoutBtn">🚪 Logout</button>
   </header>
 
   <main class="container">
@@ -112,16 +106,35 @@
     </section>
   </main>
 
-  <script src="js/firebase-config.js"></script>
-  <script>
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const storage = firebase.storage();
+  <!-- ✅ Main Script using Modular Firebase -->
+  <script type="module">
+    import { auth, db, storage } from "./js/firebase-config.js";
+    import {
+      doc,
+      setDoc,
+      getDoc,
+      collection,
+      addDoc,
+      query,
+      orderBy,
+      getDocs,
+      deleteDoc
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import {
+      ref,
+      uploadBytes,
+      getDownloadURL
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
+    import {
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
-    const storesRef = db.collection("stores");
+    const saveStoreBtn = document.getElementById("saveStore");
+    const addProductBtn = document.getElementById("addProduct");
+    const logoutBtn = document.getElementById("logoutBtn");
 
-    // ✅ Redirect if not logged in
-    auth.onAuthStateChanged(user => {
+    onAuthStateChanged(auth, user => {
       if (!user) {
         window.location.href = "login.html";
       } else {
@@ -130,8 +143,7 @@
       }
     });
 
-    // ✅ Save store profile
-    document.getElementById("saveStore").onclick = () => {
+    saveStoreBtn.addEventListener("click", async () => {
       const user = auth.currentUser;
       if (!user) return;
 
@@ -142,13 +154,15 @@
         updatedAt: Date.now()
       };
 
-      storesRef.doc(user.uid).set(data, { merge: true })
-        .then(() => alert("✅ Store profile saved"))
-        .catch(err => alert("❌ " + err.message));
-    };
+      try {
+        await setDoc(doc(db, "stores", user.uid), data, { merge: true });
+        alert("✅ Store profile saved");
+      } catch (err) {
+        alert("❌ " + err.message);
+      }
+    });
 
-    // ✅ Add product
-    document.getElementById("addProduct").onclick = () => {
+    addProductBtn.addEventListener("click", async () => {
       const user = auth.currentUser;
       if (!user) return;
 
@@ -161,76 +175,74 @@
         return;
       }
 
-      const storageRef = storage.ref(`products/${user.uid}/${Date.now()}_${file.name}`);
-      storageRef.put(file).then(snapshot => snapshot.ref.getDownloadURL())
-        .then(url => {
-          return storesRef.doc(user.uid).collection("products").add({
-            name, price, photo: url,
-            createdAt: Date.now()
-          });
-        })
-        .then(() => {
-          alert("✅ Product added!");
-          document.getElementById("productName").value = "";
-          document.getElementById("productPrice").value = "";
-          document.getElementById("productPhoto").value = "";
-          loadProducts(user.uid);
-        })
-        .catch(err => alert("❌ " + err.message));
-    };
+      try {
+        const imgRef = ref(storage, `products/${user.uid}/${Date.now()}_${file.name}`);
+        await uploadBytes(imgRef, file);
+        const photoURL = await getDownloadURL(imgRef);
 
-    // ✅ Load store profile
-    function loadStore(uid) {
-      storesRef.doc(uid).get().then(doc => {
-        if (doc.exists) {
-          const data = doc.data();
-          document.getElementById("storeName").value = data.name || "";
-          document.getElementById("storePhone").value = data.phone || "";
-          document.getElementById("storeDesc").value = data.desc || "";
-        }
-      });
+        await addDoc(collection(db, "stores", user.uid, "products"), {
+          name, price, photo: photoURL, createdAt: Date.now()
+        });
+
+        alert("✅ Product added!");
+        document.getElementById("productName").value = "";
+        document.getElementById("productPrice").value = "";
+        document.getElementById("productPhoto").value = "";
+
+        loadProducts(user.uid);
+      } catch (err) {
+        alert("❌ " + err.message);
+      }
+    });
+
+    async function loadStore(uid) {
+      const docRef = doc(db, "stores", uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        document.getElementById("storeName").value = data.name || "";
+        document.getElementById("storePhone").value = data.phone || "";
+        document.getElementById("storeDesc").value = data.desc || "";
+      }
     }
 
-    // ✅ Load products
-    function loadProducts(uid) {
+    async function loadProducts(uid) {
       const gallery = document.getElementById("catalogGallery");
       gallery.innerHTML = "";
 
-      storesRef.doc(uid).collection("products")
-        .orderBy("createdAt", "desc")
-        .get()
-        .then(snapshot => {
-          snapshot.forEach(docSnap => {
-            const p = docSnap.data();
-            const div = document.createElement("div");
-            div.className = "product-card";
-            div.innerHTML = `
-              <img src="${p.photo}" alt="${p.name}" />
-              <p><b>${p.name}</b><br>Rs. ${p.price}</p>
-              <button class="danger" onclick="deleteProduct('${uid}','${docSnap.id}')">🗑 Delete</button>
-            `;
-            gallery.appendChild(div);
-          });
-        });
-    }
+      const q = query(collection(db, "stores", uid, "products"), orderBy("createdAt", "desc"));
+      const snapshot = await getDocs(q);
 
-    // ✅ Delete product
-    function deleteProduct(uid, productId) {
-      if (!confirm("Are you sure you want to delete this product?")) return;
-      storesRef.doc(uid).collection("products").doc(productId).delete()
-        .then(() => {
-          alert("🗑 Product deleted!");
-          loadProducts(uid);
-        })
-        .catch(err => alert("❌ " + err.message));
-    }
-
-    // ✅ Logout
-    function logout() {
-      auth.signOut().then(() => {
-        window.location.href = "login.html";
+      snapshot.forEach(docSnap => {
+        const p = docSnap.data();
+        const div = document.createElement("div");
+        div.className = "product-card";
+        div.innerHTML = `
+          <img src="${p.photo}" alt="${p.name}" />
+          <p><b>${p.name}</b><br>Rs. ${p.price}</p>
+          <button class="danger" onclick="deleteProduct('${uid}', '${docSnap.id}')">🗑 Delete</button>
+        `;
+        gallery.appendChild(div);
       });
     }
+
+    window.deleteProduct = async function(uid, productId) {
+      if (!confirm("Are you sure you want to delete this product?")) return;
+
+      try {
+        await deleteDoc(doc(db, "stores", uid, "products", productId));
+        alert("🗑 Product deleted!");
+        loadProducts(uid);
+      } catch (err) {
+        alert("❌ " + err.message);
+      }
+    };
+
+    logoutBtn.addEventListener("click", () => {
+      signOut(auth).then(() => {
+        window.location.href = "login.html";
+      });
+    });
   </script>
 </body>
 </html>

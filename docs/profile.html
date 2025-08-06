@@ -25,9 +25,7 @@
       align-items: center;
       justify-content: space-between;
     }
-    .logo {
-      height: 40px;
-    }
+    .logo { height: 40px; }
     h1 { margin: 0; font-size: 20px; }
     main { padding: 20px; }
     input, select, button {
@@ -54,6 +52,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+  <script src="js/firebase-config.js"></script> <!-- ✅ Ensure this file uses compat -->
 </head>
 <body>
   <header>
@@ -66,7 +65,7 @@
     <!-- Profile Photo -->
     <section>
       <h2>📸 Profile Photo</h2>
-      <img id="profilePreview" src="img/default-user.png" alt="Profile" style="width:120px;height:120px;border-radius:50%;border:2px solid #ccc;margin-bottom:10px;">
+      <img id="profilePreview" src="img/default-user.png" alt="Profile" onerror="this.src='img/default-user.png'" style="width:120px;height:120px;border-radius:50%;border:2px solid #ccc;margin-bottom:10px;">
       <input type="file" id="profilePhoto" accept="image/*">
       <button id="uploadPhoto">⬆️ Upload Photo</button>
     </section>
@@ -89,52 +88,53 @@
     </section>
   </main>
 
-  <script src="js/firebase-config.js"></script>
   <script>
     const auth = firebase.auth();
     const storage = firebase.storage();
-    const usersRef = firebase.firestore().collection("users");
+    const db = firebase.firestore();
+    const usersRef = db.collection("users");
 
-    document.getElementById("role").addEventListener("change", () => {
-      const role = document.getElementById("role").value;
-      document.getElementById("price").style.display =
-        (role === "customer" || role === "admin" || role === "store") ? "none" : "block";
+    const nameInput = document.getElementById("name");
+    const phoneInput = document.getElementById("phone");
+    const roleSelect = document.getElementById("role");
+    const priceInput = document.getElementById("price");
+    const profilePreview = document.getElementById("profilePreview");
+
+    // Show/hide price input based on role
+    roleSelect.addEventListener("change", () => {
+      const role = roleSelect.value;
+      priceInput.style.display = ["painter", "plumber", "electrician"].includes(role) ? "block" : "none";
     });
 
-    auth.onAuthStateChanged(user => {
-      if (!user) return window.location.href = "login.html";
+    auth.onAuthStateChanged(async user => {
+      if (!user) return (window.location.href = "login.html");
 
-      usersRef.doc(user.uid).get().then(doc => {
-        if (doc.exists) {
-          const data = doc.data();
-          document.getElementById("name").value = data.name || "";
-          document.getElementById("phone").value = data.phone || "";
-          document.getElementById("role").value = data.role || "customer";
-          document.getElementById("price").value = data.price || "";
+      const doc = await usersRef.doc(user.uid).get();
+      if (doc.exists) {
+        const data = doc.data();
+        nameInput.value = data.name || "";
+        phoneInput.value = data.phone || "";
+        roleSelect.value = data.role || "customer";
+        priceInput.value = data.price || "";
+        if (data.photoURL) profilePreview.src = data.photoURL;
 
-          if (data.photoURL) {
-            document.getElementById("profilePreview").src = data.photoURL;
-          }
-
-          const r = data.role;
-          document.getElementById("price").style.display =
-            (r === "customer" || r === "admin" || r === "store") ? "none" : "block";
-        } else {
-          alert("👋 Welcome! Please complete your profile.");
-        }
-      });
+        priceInput.style.display = ["painter", "plumber", "electrician"].includes(data.role) ? "block" : "none";
+      } else {
+        alert("👋 Welcome! Please complete your profile.");
+      }
     });
 
     document.getElementById("uploadPhoto").onclick = async () => {
+      const file = document.getElementById("profilePhoto").files[0];
+      if (!file) return alert("❗ Please choose a photo.");
+
+      const user = auth.currentUser;
+      const ref = storage.ref(`profiles/${user.uid}.jpg`);
       try {
-        const file = document.getElementById("profilePhoto").files[0];
-        if (!file) return alert("Please choose a photo first!");
-        const user = auth.currentUser;
-        const ref = storage.ref("profiles/" + user.uid + ".jpg");
         await ref.put(file);
         const url = await ref.getDownloadURL();
         await usersRef.doc(user.uid).set({ photoURL: url }, { merge: true });
-        document.getElementById("profilePreview").src = url;
+        profilePreview.src = url;
         alert("✅ Photo uploaded!");
       } catch (err) {
         alert("❌ " + err.message);
@@ -142,66 +142,69 @@
     };
 
     document.getElementById("saveProfile").onclick = async () => {
-      try {
-        const user = auth.currentUser;
-        const role = document.getElementById("role").value;
-        const data = {
-          name: document.getElementById("name").value,
-          phone: document.getElementById("phone").value,
-          role: role,
-          price: (role === "customer" || role === "admin" || role === "store") ? null : document.getElementById("price").value,
-          updatedAt: Date.now()
-        };
+      const user = auth.currentUser;
+      const name = nameInput.value.trim();
+      const phone = phoneInput.value.trim();
+      const role = roleSelect.value;
+      const price = priceInput.value.trim();
 
-        if (!data.name || !data.phone) {
-          return alert("⚠️ Name and phone are required!");
-        }
+      if (!name || !phone) return alert("⚠️ Name and Phone are required.");
 
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(async pos => {
-            data.location = {
-              lat: pos.coords.latitude,
-              lng: pos.coords.longitude,
-              updated: Date.now()
-            };
-            await usersRef.doc(user.uid).set(data, { merge: true });
-            afterSave(role);
-          }, async () => {
-            await usersRef.doc(user.uid).set(data, { merge: true });
-            afterSave(role);
-          });
-        } else {
-          await usersRef.doc(user.uid).set(data, { merge: true });
-          afterSave(role);
-        }
-      } catch (err) {
-        alert("❌ " + err.message);
+      const data = {
+        name,
+        phone,
+        role,
+        updatedAt: Date.now(),
+        price: ["painter", "plumber", "electrician"].includes(role) ? price : null
+      };
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async pos => {
+          data.location = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            updated: Date.now()
+          };
+          await saveUser(user.uid, data);
+        }, async () => {
+          await saveUser(user.uid, data);
+        });
+      } else {
+        await saveUser(user.uid, data);
       }
     };
 
-    function afterSave(role) {
-      alert("✅ Profile updated!");
-      if (role === "admin") {
-        window.location.href = "admin.html";
-      } else if (role === "customer") {
-        window.location.href = "map.html";
-      } else if (["painter", "plumber", "electrician"].includes(role)) {
-        window.location.href = "map.html";
-      } else if (role === "store") {
-        window.location.href = "store.html";
-      } else {
-        window.location.href = "map.html";
+    async function saveUser(uid, data) {
+      try {
+        await usersRef.doc(uid).set(data, { merge: true });
+        alert("✅ Profile updated!");
+        redirectAfterSave(data.role);
+      } catch (err) {
+        alert("❌ " + err.message);
       }
+    }
+
+    function redirectAfterSave(role) {
+      const routes = {
+        admin: "admin.html",
+        customer: "map.html",
+        painter: "map.html",
+        plumber: "map.html",
+        electrician: "map.html",
+        store: "store.html"
+      };
+      window.location.href = routes[role] || "map.html";
     }
 
     function logout() {
       auth.signOut().then(() => window.location.href = "login.html");
     }
 
+    // ✅ Register Service Worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js')
-        .then(reg => console.log("✅ Service Worker registered"))
-        .catch(err => console.warn("Service Worker failed:", err));
+        .then(() => console.log("✅ Service Worker registered"))
+        .catch(err => console.warn("❌ SW failed:", err));
     }
   </script>
 </body>

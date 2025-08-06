@@ -20,7 +20,6 @@
       padding: 0;
       text-align: center;
     }
-
     header {
       background: #111;
       padding: 15px;
@@ -28,16 +27,13 @@
       justify-content: center;
       align-items: center;
     }
-
     h1 {
       margin: 0;
       font-size: 20px;
     }
-
     main {
       padding: 20px;
     }
-
     select, button {
       width: 90%;
       max-width: 400px;
@@ -48,74 +44,30 @@
       display: block;
       border: none;
     }
-
     select {
       background: #222;
       color: white;
     }
-
     button {
       background: #28a745;
       color: white;
       cursor: pointer;
     }
-
     button:hover {
       background: #218838;
     }
-
     .logo {
       height: 40px;
       margin-right: 10px;
     }
   </style>
 
-  <!-- Firebase -->
-  <script type="module">
-    import { auth, db } from './firebase.js';
-    import {
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-    import {
-      doc, setDoc
-    } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
-
-    // Auth check
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = "login.html";
-      }
-    });
-
-    // Save role
-    window.saveRole = async function () {
-      const user = auth.currentUser;
-      const role = document.getElementById("roleSelect").value;
-
-      if (!role) {
-        alert("⚠️ Please select a role");
-        return;
-      }
-
-      try {
-        await setDoc(doc(db, "users", user.uid), {
-          role: role,
-          updatedAt: Date.now()
-        }, { merge: true });
-
-        // Redirect
-        if (role === "admin") {
-          window.location.href = "admin.html";
-        } else if (role === "store") {
-          window.location.href = "store.html";
-        } else {
-          window.location.href = "map.html";
-        }
-      } catch (err) {
-        alert("❌ " + err.message);
-      }
-    };
-  </script>
+  <!-- Firebase + utils -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/utils.js"></script>
 </head>
 <body>
   <header>
@@ -126,6 +78,7 @@
   <main>
     <p>Let us know how you want to use FixMyRoom:</p>
     <select id="roleSelect">
+      <option value="">-- Select Role --</option>
       <option value="customer">🙋 Customer</option>
       <option value="painter">🎨 Painter</option>
       <option value="plumber">🔧 Plumber</option>
@@ -136,6 +89,46 @@
 
     <button onclick="saveRole()">✅ Confirm & Continue</button>
   </main>
+
+  <!-- Firebase Auth + Role Save -->
+  <script>
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = "login.html";
+      }
+    });
+
+    async function saveRole() {
+      const user = firebase.auth().currentUser;
+      const role = document.getElementById("roleSelect").value;
+
+      if (!role) {
+        showAlert("warning", "Please select a role");
+        return;
+      }
+
+      try {
+        await firebase.firestore().collection("users").doc(user.uid).set({
+          role: role,
+          updatedAt: Date.now()
+        }, { merge: true });
+
+        showAlert("success", `✅ Role set to "${role}"`);
+
+        setTimeout(() => {
+          if (role === "admin") {
+            window.location.href = "admin.html";
+          } else if (role === "store") {
+            window.location.href = "store.html";
+          } else {
+            window.location.href = "map.html";
+          }
+        }, 1000);
+      } catch (err) {
+        showAlert("error", "❌ " + err.message);
+      }
+    }
+  </script>
 
   <!-- PWA: Register Service Worker -->
   <script>

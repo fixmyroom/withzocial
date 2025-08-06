@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FixMyRoom - Login</title>
-  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="/img/logo.png" type="image/png" />
   <meta name="theme-color" content="#1db954" />
@@ -85,41 +85,43 @@
     <a href="index.html" class="link">🏠 Back to Home</a>
   </div>
 
-  <!-- Firebase + Auth Logic -->
-  <script type="module">
-    import { auth, db } from "./firebase.js";
-    import {
-      signInWithEmailAndPassword,
-      createUserWithEmailAndPassword,
-      GoogleAuthProvider,
-      signInWithPopup,
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-    import {
-      doc,
-      setDoc,
-      getDoc,
-      serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+  <!-- ✅ Firebase (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+
+  <!-- ✅ Alert utility -->
+  <script>
+    function showAlert(type, message) {
+      alert(`${type.toUpperCase()}: ${message}`);
+    }
+  </script>
+
+  <!-- ✅ Auth Logic -->
+  <script>
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
     async function saveUser(user) {
       if (!user) return;
-      await setDoc(doc(db, "users", user.uid), {
+      await db.collection("users").doc(user.uid).set({
         uid: user.uid,
         email: user.email || "",
         name: user.displayName || "",
         phone: user.phoneNumber || "",
         isPremium: false,
-        updatedAt: serverTimestamp()
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
     }
 
     async function redirectUser(user) {
       if (!user) return;
-      const snap = await getDoc(doc(db, "users", user.uid));
+      const docRef = db.collection("users").doc(user.uid);
+      const snap = await docRef.get();
       const data = snap.data();
 
-      if (!snap.exists() || !data.role) {
+      if (!snap.exists || !data.role) {
         window.location.href = "profile.html";
       } else if (data.role === "admin") {
         window.location.href = "admin.html";
@@ -134,57 +136,68 @@
       }
     }
 
-    onAuthStateChanged(auth, (user) => {
+    auth.onAuthStateChanged(user => {
       if (user) redirectUser(user);
     });
 
     document.getElementById("loginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const email = document.getElementById("email").value;
+      const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
 
+      if (!email || !password) {
+        showAlert("error", "Email & password are required.");
+        return;
+      }
+
       try {
-        const cred = await signInWithEmailAndPassword(auth, email, password);
+        const cred = await auth.signInWithEmailAndPassword(email, password);
         await saveUser(cred.user);
         redirectUser(cred.user);
       } catch (err) {
-        alert("❌ " + err.message);
+        showAlert("error", err.message);
       }
     });
 
     document.getElementById("signupBtn").addEventListener("click", async () => {
-      const email = document.getElementById("email").value;
+      const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
 
+      if (!email || !password) {
+        showAlert("error", "Please enter email and password to create an account.");
+        return;
+      }
+
       try {
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        const cred = await auth.createUserWithEmailAndPassword(email, password);
         await saveUser(cred.user);
-        alert("✅ Account created! Please complete your profile.");
+        showAlert("success", "Account created! Please complete your profile.");
         window.location.href = "profile.html";
       } catch (err) {
-        alert("❌ " + err.message);
+        showAlert("error", err.message);
       }
     });
 
     document.getElementById("googleBtn").addEventListener("click", async () => {
-      const provider = new GoogleAuthProvider();
+      const provider = new firebase.auth.GoogleAuthProvider();
+
       try {
-        const cred = await signInWithPopup(auth, provider);
+        const cred = await auth.signInWithPopup(provider);
         await saveUser(cred.user);
 
-        const snap = await getDoc(doc(db, "users", cred.user.uid));
-        if (!snap.exists() || !snap.data().role) {
+        const snap = await db.collection("users").doc(cred.user.uid).get();
+        if (!snap.exists || !snap.data().role) {
           window.location.href = "profile.html";
         } else {
           redirectUser(cred.user);
         }
       } catch (err) {
-        alert("❌ " + err.message);
+        showAlert("error", err.message);
       }
     });
   </script>
 
-  <!-- ✅ Register Service Worker -->
+  <!-- ✅ PWA Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js')
