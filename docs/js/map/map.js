@@ -12,6 +12,24 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 let markers = {};
 let userMarker;
 
+// Toast helper
+function showToast(message) {
+  let toast = document.createElement("div");
+  toast.textContent = message;
+  toast.style.position = "fixed";
+  toast.style.bottom = "20px";
+  toast.style.left = "50%";
+  toast.style.transform = "translateX(-50%)";
+  toast.style.background = "#333";
+  toast.style.color = "white";
+  toast.style.padding = "10px 20px";
+  toast.style.borderRadius = "5px";
+  toast.style.boxShadow = "0 2px 6px rgba(0,0,0,0.3)";
+  toast.style.zIndex = "9999";
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
 // Role emojis
 function getRoleEmoji(role, isPremium) {
   let emoji = "👤";
@@ -66,7 +84,17 @@ db.collection("users")
     snapshot.docChanges().forEach(change => {
       const id = change.doc.id;
       const data = change.doc.data();
+
+      // 📌 Skip if no location
       if (!data.location) return;
+
+      // 📌 Require phone number
+      if (!data.phone || data.phone.trim() === "") {
+        if (change.type !== "removed") {
+          showToast(`⚠️ ${data.name || "This user"} is hidden (no phone set).`);
+        }
+        return; // don’t show users without phone
+      }
 
       // Handle removed users
       if (change.type === "removed") {
@@ -80,7 +108,7 @@ db.collection("users")
       // Popup content with Request button
       const popupContent = `
         <b>${getRoleEmoji(data.role, data.isPremium)} ${data.name || "Unnamed"}</b><br>
-        📞 ${data.phone || "N/A"}<br>
+        📞 ${data.phone}<br>
         💰 Price: ${data.price || "Not set"}<br>
         <button onclick="openRequest('${id}','${data.role || 'worker'}','${data.name || ''}')">📩 Request</button>
       `;

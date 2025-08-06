@@ -77,7 +77,7 @@
       signInWithEmailAndPassword, createUserWithEmailAndPassword,
       GoogleAuthProvider, signInWithPopup, onAuthStateChanged 
     } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-    import { doc, setDoc, serverTimestamp } 
+    import { doc, setDoc, getDoc, serverTimestamp } 
       from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
     // Save user profile in Firestore
@@ -88,17 +88,32 @@
         email: user.email,
         name: user.displayName || "",
         phone: user.phoneNumber || "",
-        role: "customer",
+        role: "customer",   // default role
         isPremium: false,
         createdAt: serverTimestamp()
       }, { merge: true });
     }
 
+    // Redirect based on role
+    async function redirectUser(user) {
+      if (!user) return;
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const data = snap.data();
+
+      if (!data || !data.role) {
+        window.location.href = "profile.html"; // first-time setup
+      } else if (data.role === "admin") {
+        window.location.href = "admin.html";
+      } else if (data.role === "customer") {
+        window.location.href = "map.html";
+      } else {
+        window.location.href = "profile.html"; // worker
+      }
+    }
+
     // Auto-redirect if already logged in
     onAuthStateChanged(auth, (user) => {
-      if (user) {
-        window.location.href = "map.html";
-      }
+      if (user) redirectUser(user);
     });
 
     // Login handler
@@ -108,7 +123,7 @@
       const password = document.getElementById("password").value;
 
       signInWithEmailAndPassword(auth, email, password)
-        .then((cred) => saveUser(cred.user).then(() => window.location.href = "map.html"))
+        .then((cred) => saveUser(cred.user).then(() => redirectUser(cred.user)))
         .catch((err) => alert("❌ " + err.message));
     });
 
@@ -120,7 +135,7 @@
       createUserWithEmailAndPassword(auth, email, password)
         .then((cred) => saveUser(cred.user).then(() => {
           alert("✅ Account created!");
-          window.location.href = "map.html";
+          redirectUser(cred.user);
         }))
         .catch((err) => alert("❌ " + err.message));
     });
@@ -129,7 +144,7 @@
     document.getElementById("googleBtn").addEventListener("click", () => {
       const provider = new GoogleAuthProvider();
       signInWithPopup(auth, provider)
-        .then((cred) => saveUser(cred.user).then(() => window.location.href = "map.html"))
+        .then((cred) => saveUser(cred.user).then(() => redirectUser(cred.user)))
         .catch((err) => alert("❌ " + err.message));
     });
   </script>

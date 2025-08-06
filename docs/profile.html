@@ -51,6 +51,12 @@
     const storage = firebase.storage();
     const usersRef = firebase.firestore().collection("users");
 
+    // Hide/show price based on role
+    document.getElementById("role").addEventListener("change", () => {
+      const role = document.getElementById("role").value;
+      document.getElementById("price").style.display = (role === "customer") ? "none" : "block";
+    });
+
     // Load existing profile
     auth.onAuthStateChanged(user => {
       if (!user) {
@@ -67,6 +73,11 @@
           if (data.photoURL) {
             document.getElementById("profilePreview").src = data.photoURL;
           }
+          if (data.role === "customer") {
+            document.getElementById("price").style.display = "none";
+          }
+        } else {
+          alert("👋 Welcome! Please complete your profile.");
         }
       });
     });
@@ -87,15 +98,30 @@
     // Save profile info
     document.getElementById("saveProfile").onclick = async () => {
       const user = auth.currentUser;
+      const role = document.getElementById("role").value;
       const data = {
         name: document.getElementById("name").value,
         phone: document.getElementById("phone").value,
-        role: document.getElementById("role").value,
-        price: document.getElementById("price").value,
+        role: role,
+        price: role === "customer" ? null : document.getElementById("price").value,
         updatedAt: Date.now()
       };
+
+      if (!data.name || !data.phone) {
+        return alert("⚠️ Name and phone are required!");
+      }
+
       await usersRef.doc(user.uid).set(data, { merge: true });
       alert("✅ Profile updated!");
+
+      // Redirect after saving
+      if (role === "customer") {
+        window.location.href = "map.html";
+      } else if (role === "admin") {
+        window.location.href = "admin.html";
+      } else {
+        window.location.href = "profile.html"; // workers & stores stay here
+      }
     };
 
     // Logout
