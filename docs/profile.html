@@ -95,7 +95,8 @@
     // Hide/show price based on role
     document.getElementById("role").addEventListener("change", () => {
       const role = document.getElementById("role").value;
-      document.getElementById("price").style.display = (role === "customer" || role === "admin") ? "none" : "block";
+      document.getElementById("price").style.display = 
+        (role === "customer" || role === "admin" || role === "store") ? "none" : "block";
     });
 
     // Load existing profile
@@ -114,7 +115,7 @@
           if (data.photoURL) {
             document.getElementById("profilePreview").src = data.photoURL;
           }
-          if (data.role === "customer" || data.role === "admin") {
+          if (data.role === "customer" || data.role === "admin" || data.role === "store") {
             document.getElementById("price").style.display = "none";
           }
         } else {
@@ -149,7 +150,7 @@
           name: document.getElementById("name").value,
           phone: document.getElementById("phone").value,
           role: role,
-          price: (role === "customer" || role === "admin") ? null : document.getElementById("price").value,
+          price: (role === "customer" || role === "admin" || role === "store") ? null : document.getElementById("price").value,
           updatedAt: Date.now()
         };
 
@@ -180,14 +181,19 @@
       }
     };
 
+    // ✅ Role-based redirect after save
     function afterSave(role) {
       alert("✅ Profile updated!");
-      if (role === "customer") {
-        window.location.href = "map.html";
-      } else if (role === "admin") {
+      if (role === "admin") {
         window.location.href = "admin.html";
+      } else if (role === "customer") {
+        window.location.href = "map.html";
+      } else if (["painter","plumber","electrician"].includes(role)) {
+        window.location.href = "map.html";
+      } else if (role === "store") {
+        window.location.href = "store.html";
       } else {
-        window.location.href = "map.html"; // workers & stores go to map
+        window.location.href = "map.html";
       }
     }
 

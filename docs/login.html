@@ -80,17 +80,16 @@
     import { doc, setDoc, getDoc, serverTimestamp } 
       from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
-    // Save user profile in Firestore
+    // Save/merge basic user record
     async function saveUser(user) {
       if (!user) return;
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
-        email: user.email,
+        email: user.email || "",
         name: user.displayName || "",
         phone: user.phoneNumber || "",
-        role: "customer",   // default role
         isPremium: false,
-        createdAt: serverTimestamp()
+        updatedAt: serverTimestamp()
       }, { merge: true });
     }
 
@@ -100,14 +99,19 @@
       const snap = await getDoc(doc(db, "users", user.uid));
       const data = snap.data();
 
-      if (!data || !data.role) {
-        window.location.href = "profile.html"; // first-time setup
+      if (!snap.exists() || !data.role) {
+        // 🚨 New or incomplete profile → go to profile setup
+        window.location.href = "profile.html";
       } else if (data.role === "admin") {
         window.location.href = "admin.html";
       } else if (data.role === "customer") {
         window.location.href = "map.html";
+      } else if (["painter","plumber","electrician"].includes(data.role)) {
+        window.location.href = "map.html"; // workers see map
+      } else if (data.role === "store") {
+        window.location.href = "store.html";
       } else {
-        window.location.href = "profile.html"; // worker
+        window.location.href = "profile.html"; // fallback
       }
     }
 
@@ -117,35 +121,51 @@
     });
 
     // Login handler
-    document.getElementById("loginForm").addEventListener("submit", (e) => {
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
 
-      signInWithEmailAndPassword(auth, email, password)
-        .then((cred) => saveUser(cred.user).then(() => redirectUser(cred.user)))
-        .catch((err) => alert("❌ " + err.message));
+      try {
+        const cred = await signInWithEmailAndPassword(auth, email, password);
+        await saveUser(cred.user);
+        redirectUser(cred.user);
+      } catch (err) {
+        alert("❌ " + err.message);
+      }
     });
 
-    // Signup handler
-    document.getElementById("signupBtn").addEventListener("click", () => {
+    // Signup handler → always send to profile.html
+    document.getElementById("signupBtn").addEventListener("click", async () => {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
 
-      createUserWithEmailAndPassword(auth, email, password)
-        .then((cred) => saveUser(cred.user).then(() => {
-          alert("✅ Account created!");
-          redirectUser(cred.user);
-        }))
-        .catch((err) => alert("❌ " + err.message));
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        await saveUser(cred.user);
+        alert("✅ Account created! Please complete your profile.");
+        window.location.href = "profile.html";
+      } catch (err) {
+        alert("❌ " + err.message);
+      }
     });
 
-    // Google login
-    document.getElementById("googleBtn").addEventListener("click", () => {
+    // Google login → new users go to profile.html
+    document.getElementById("googleBtn").addEventListener("click", async () => {
       const provider = new GoogleAuthProvider();
-      signInWithPopup(auth, provider)
-        .then((cred) => saveUser(cred.user).then(() => redirectUser(cred.user)))
-        .catch((err) => alert("❌ " + err.message));
+      try {
+        const cred = await signInWithPopup(auth, provider);
+        await saveUser(cred.user);
+
+        const snap = await getDoc(doc(db, "users", cred.user.uid));
+        if (!snap.exists() || !snap.data().role) {
+          window.location.href = "profile.html";
+        } else {
+          redirectUser(cred.user);
+        }
+      } catch (err) {
+        alert("❌ " + err.message);
+      }
     });
   </script>
 </body>
