@@ -1,22 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FixMyRoom - Customer Dashboard</title>
-  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="img/logo.png" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <meta name="theme-color" content="#000000" />
 
   <!-- Firebase + Leaflet -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Register service worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js');
+      });
+    }
+  </script>
 </head>
 <body>
   <header>
-    <img src="img/logo.png" alt="FixMyRoom" class="logo">
+    <img src="img/logo.png" alt="FixMyRoom" class="logo" />
     <h1>👤 Customer Dashboard</h1>
     <button onclick="logout()">🚪 Logout</button>
   </header>
@@ -25,15 +37,15 @@
     <!-- 📍 Live Map -->
     <section>
       <h2>📍 Workers & Stores Nearby</h2>
-      <input type="text" id="searchInput" placeholder="🔍 Search by name or role" oninput="searchMap()">
-      <div id="map"></div>
+      <input type="text" id="searchInput" placeholder="🔍 Search by name or role" oninput="searchMap()" />
+      <div id="map" style="height: 300px;"></div>
     </section>
 
-    <!-- 📝 Request Form (standalone quick request) -->
+    <!-- 📝 Quick Request -->
     <section>
       <h2>📝 Send Quick Request</h2>
-      <input type="text" id="reqName" placeholder="👤 Your Name">
-      <input type="text" id="reqPhone" placeholder="📞 Your Phone">
+      <input type="text" id="reqName" placeholder="👤 Your Name" />
+      <input type="text" id="reqPhone" placeholder="📞 Your Phone" />
       <textarea id="reqDetails" placeholder="💬 Describe your problem"></textarea>
       <button id="submitRequest">📩 Submit Request</button>
     </section>
@@ -41,8 +53,8 @@
     <!-- 🎨 Painter Tool -->
     <section>
       <h2>🎨 Painter Tool</h2>
-      <input type="file" id="roomPhoto" accept="image/*" onchange="previewRoomImage(event)">
-      <input type="color" id="colorPicker" value="#ff0000" onchange="applyColor()">
+      <input type="file" id="roomPhoto" accept="image/*" onchange="previewRoomImage(event)" />
+      <input type="color" id="colorPicker" value="#ff0000" onchange="applyColor()" />
       <canvas id="colorCanvas"></canvas>
     </section>
 
@@ -50,7 +62,7 @@
     <section>
       <h2>📏 Plumber Tool</h2>
       <button onclick="startMeasuring()">📸 Start Camera</button>
-      <video id="camera" autoplay></video>
+      <video id="camera" autoplay style="width: 100%; max-height: 240px;"></video>
     </section>
 
     <!-- 🏬 Store Catalog -->
@@ -60,18 +72,18 @@
     </section>
   </main>
 
-  <!-- 📩 Request Modal -->
-  <div id="requestModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center;">
-    <div style="background:#fff; padding:20px; border-radius:8px; max-width:400px; width:90%; position:relative;">
-      <span id="closeRequest" style="position:absolute; top:10px; right:10px; cursor:pointer; color:red;">❌</span>
+  <!-- 📩 Modal Request Form -->
+  <div id="requestModal" class="modal">
+    <div class="modal-content">
+      <span id="closeRequest" class="close">❌</span>
       <h2>📩 Send Request</h2>
       <form id="requestForm">
-        <input type="hidden" id="targetId">
-        <input type="hidden" id="targetType">
-        <input type="text" id="reqName" placeholder="👤 Your Name" required>
-        <input type="text" id="reqPhone" placeholder="📞 Your Phone" required>
-        <textarea id="reqDetails" placeholder="💬 Describe your problem" required></textarea>
-        <input type="file" id="reqPhoto" accept="image/*">
+        <input type="hidden" id="targetId" />
+        <input type="hidden" id="targetType" />
+        <input type="text" id="modalName" placeholder="👤 Your Name" required />
+        <input type="text" id="modalPhone" placeholder="📞 Your Phone" required />
+        <textarea id="modalDetails" placeholder="💬 Describe your problem" required></textarea>
+        <input type="file" id="reqPhoto" accept="image/*" />
         <button type="submit">✅ Send</button>
       </form>
     </div>
@@ -83,16 +95,14 @@
     const auth = firebase.auth();
     const dbRef = db.collection("stores");
 
-    // Redirect if not logged in
     auth.onAuthStateChanged(user => {
       if (!user) {
-        window.location.href = "login.html";
+        location.href = "login.html";
       } else {
         loadCatalog();
       }
     });
 
-    // Load all store products
     function loadCatalog() {
       const catalogDiv = document.getElementById("storeCatalog");
       catalogDiv.innerHTML = "";
@@ -100,41 +110,39 @@
       dbRef.get().then(stores => {
         stores.forEach(storeDoc => {
           const store = storeDoc.data();
-          const storeBlock = document.createElement("div");
-          storeBlock.className = "card";
-          storeBlock.innerHTML = `<h3>🏪 ${store.name || "Unnamed Store"}</h3>
-                                  <p>📞 ${store.phone || "N/A"}</p>
-                                  <p>${store.desc || ""}</p>
-                                  <div id="products_${storeDoc.id}" class="catalogGallery"></div>`;
-          catalogDiv.appendChild(storeBlock);
+          const block = document.createElement("div");
+          block.className = "card";
+          block.innerHTML = `<h3>🏪 ${store.name || "Unnamed Store"}</h3>
+                             <p>📞 ${store.phone || "N/A"}</p>
+                             <p>${store.desc || ""}</p>
+                             <div id="products_${storeDoc.id}" class="catalogGallery"></div>`;
+          catalogDiv.appendChild(block);
 
-          // Load products for this store
           storeDoc.ref.collection("products").get().then(products => {
-            const productDiv = document.getElementById("products_" + storeDoc.id);
+            const pDiv = document.getElementById("products_" + storeDoc.id);
             products.forEach(pDoc => {
               const p = pDoc.data();
-              const div = document.createElement("div");
-              div.className = "catalog-photo";
-              div.innerHTML = `
-                <img src="${p.photo}" class="catalog-photo">
-                <p><b>${p.name}</b><br>Rs. ${p.price}</p>
-              `;
-              productDiv.appendChild(div);
+              const item = document.createElement("div");
+              item.className = "catalog-photo";
+              item.innerHTML = `<img src="${p.photo}" class="catalog-photo" />
+                                <p><b>${p.name}</b><br>Rs. ${p.price}</p>`;
+              pDiv.appendChild(item);
             });
           });
         });
       });
     }
 
-    // Quick request (standalone)
+    // Quick request
     document.getElementById("submitRequest").onclick = () => {
       const name = document.getElementById("reqName").value;
       const phone = document.getElementById("reqPhone").value;
       const details = document.getElementById("reqDetails").value;
+
       if (!name || !phone || !details) {
-        alert("⚠️ Please fill all fields!");
-        return;
+        return alert("⚠️ Fill all fields");
       }
+
       db.collection("requests").add({
         name, phone, details,
         createdAt: Date.now()
@@ -145,10 +153,51 @@
 
     // Logout
     function logout() {
-      auth.signOut().then(() => {
-        window.location.href = "login.html";
+      auth.signOut().then(() => location.href = "login.html");
+    }
+
+    // Painter tool
+    function previewRoomImage(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.getElementById("colorCanvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function applyColor() {
+      const color = document.getElementById("colorPicker").value;
+      const canvas = document.getElementById("colorCanvas");
+      const ctx = canvas.getContext("2d");
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Plumber tool
+    function startMeasuring() {
+      const video = document.getElementById("camera");
+      navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+        video.srcObject = stream;
+      }).catch(() => {
+        alert("Camera access denied.");
       });
     }
+
+    // Close modal
+    document.getElementById("closeRequest").onclick = () => {
+      document.getElementById("requestModal").style.display = "none";
+    };
   </script>
 </body>
 </html>

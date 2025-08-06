@@ -1,28 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FixMyRoom - Login</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="/img/logo.png" type="image/png" />
+  <meta name="theme-color" content="#1db954" />
 
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #000; /* Dark Uber-style */
+      background: #000;
       color: white;
       text-align: center;
       margin: 0;
       padding: 0;
     }
+
     .login-box {
       max-width: 400px;
       margin: 100px auto;
       background: #111;
       padding: 30px;
       border-radius: 10px;
-      box-shadow: 0px 0px 10px rgba(0,0,0,0.6);
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.6);
     }
+
     input {
       width: 90%;
       padding: 10px;
@@ -30,6 +35,7 @@
       border-radius: 5px;
       border: none;
     }
+
     button {
       width: 95%;
       padding: 12px;
@@ -41,9 +47,19 @@
       cursor: pointer;
       font-size: 16px;
     }
-    button:hover { background: #218838; }
-    #googleBtn { background: #db4437; }
-    #googleBtn:hover { background: #c23321; }
+
+    button:hover {
+      background: #218838;
+    }
+
+    #googleBtn {
+      background: #db4437;
+    }
+
+    #googleBtn:hover {
+      background: #c23321;
+    }
+
     .link {
       display: block;
       margin-top: 15px;
@@ -53,15 +69,14 @@
   </style>
 </head>
 <body>
-
   <div class="login-box">
     <h1>🏠 FixMyRoom</h1>
     <h2>🔑 Login / Signup</h2>
     <p>Access workers, stores & services instantly 🚀</p>
 
     <form id="loginForm">
-      <input type="email" id="email" placeholder="Enter email" required><br>
-      <input type="password" id="password" placeholder="Enter password" required><br>
+      <input type="email" id="email" placeholder="Enter email" required /><br />
+      <input type="password" id="password" placeholder="Enter password" required /><br />
       <button type="submit">➡️ Continue</button>
     </form>
 
@@ -70,17 +85,23 @@
     <a href="index.html" class="link">🏠 Back to Home</a>
   </div>
 
-  <!-- Firebase + Auth logic -->
+  <!-- Firebase + Auth Logic -->
   <script type="module">
     import { auth, db } from "./firebase.js";
-    import { 
-      signInWithEmailAndPassword, createUserWithEmailAndPassword,
-      GoogleAuthProvider, signInWithPopup, onAuthStateChanged 
+    import {
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      GoogleAuthProvider,
+      signInWithPopup,
+      onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-    import { doc, setDoc, getDoc, serverTimestamp } 
-      from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+    import {
+      doc,
+      setDoc,
+      getDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
-    // Save/merge basic user record
     async function saveUser(user) {
       if (!user) return;
       await setDoc(doc(db, "users", user.uid), {
@@ -93,34 +114,30 @@
       }, { merge: true });
     }
 
-    // Redirect based on role
     async function redirectUser(user) {
       if (!user) return;
       const snap = await getDoc(doc(db, "users", user.uid));
       const data = snap.data();
 
       if (!snap.exists() || !data.role) {
-        // 🚨 New or incomplete profile → go to profile setup
         window.location.href = "profile.html";
       } else if (data.role === "admin") {
         window.location.href = "admin.html";
       } else if (data.role === "customer") {
         window.location.href = "map.html";
-      } else if (["painter","plumber","electrician"].includes(data.role)) {
-        window.location.href = "map.html"; // workers see map
+      } else if (["painter", "plumber", "electrician"].includes(data.role)) {
+        window.location.href = "map.html";
       } else if (data.role === "store") {
         window.location.href = "store.html";
       } else {
-        window.location.href = "profile.html"; // fallback
+        window.location.href = "profile.html";
       }
     }
 
-    // Auto-redirect if already logged in
     onAuthStateChanged(auth, (user) => {
       if (user) redirectUser(user);
     });
 
-    // Login handler
     document.getElementById("loginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = document.getElementById("email").value;
@@ -135,7 +152,6 @@
       }
     });
 
-    // Signup handler → always send to profile.html
     document.getElementById("signupBtn").addEventListener("click", async () => {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
@@ -150,7 +166,6 @@
       }
     });
 
-    // Google login → new users go to profile.html
     document.getElementById("googleBtn").addEventListener("click", async () => {
       const provider = new GoogleAuthProvider();
       try {
@@ -167,6 +182,15 @@
         alert("❌ " + err.message);
       }
     });
+  </script>
+
+  <!-- ✅ Register Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(reg => console.log("✅ Service Worker registered"))
+        .catch(err => console.error("SW failed", err));
+    }
   </script>
 </body>
 </html>

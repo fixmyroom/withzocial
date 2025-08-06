@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="img/logo.png" type="image/png" />
   <title>FixMyRoom - Admin Panel</title>
-  <link rel="stylesheet" href="css/styles.css">
-
+  <link rel="stylesheet" href="css/styles.css" />
   <style>
     body {
       background: #000;
@@ -60,8 +62,6 @@
     td button:hover {
       opacity: 0.85;
     }
-
-    /* Fixed header */
     header {
       position: fixed;
       top: 0;
@@ -83,7 +83,6 @@
     header h1 {
       font-size: 1.2rem;
       margin: 0;
-      text-align: center;
       color: #fff;
     }
     .logout-btn {
@@ -117,7 +116,6 @@
     main {
       margin-top: 80px;
       padding: 15px;
-      color: #fff;
     }
     h2 {
       margin-top: 30px;
@@ -130,13 +128,12 @@
 </head>
 <body>
   <header>
-    <img src="img/logo.png" alt="FixMyRoom" class="logo">
+    <img src="img/logo.png" alt="FixMyRoom" class="logo" />
     <h1>⚙️ Admin Panel</h1>
     <button class="logout-btn" id="logoutBtn">🚪</button>
   </header>
 
-  <main class="container">
-    <!-- 👥 Users -->
+  <main>
     <section>
       <h2>👥 Users</h2>
       <div class="table-container">
@@ -155,7 +152,6 @@
       </div>
     </section>
 
-    <!-- 🛠 Workers -->
     <section>
       <h2>🛠 Workers</h2>
       <div class="table-container">
@@ -174,7 +170,6 @@
       </div>
     </section>
 
-    <!-- 📩 Requests -->
     <section>
       <h2>📩 Requests</h2>
       <div class="table-container">
@@ -193,7 +188,6 @@
       </div>
     </section>
 
-    <!-- 🏬 Stores -->
     <section>
       <h2>🏬 Stores</h2>
       <div class="table-container">
@@ -211,17 +205,19 @@
     </section>
   </main>
 
-  <!-- ✅ Firebase (modular) -->
+  <!-- ✅ Firebase Admin JS (Modular with Custom Firebase File) -->
   <script type="module">
-    import { auth, db } from "./firebase.js";
-    import { 
-      onAuthStateChanged, signOut 
+    import { auth, db } from './firebase.js';
+    import {
+      onAuthStateChanged,
+      signOut
     } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-    import { 
-      collection, getDocs, query, where, updateDoc, doc, orderBy, deleteDoc 
+    import {
+      collection, getDocs, query, where,
+      updateDoc, doc, orderBy, deleteDoc
     } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
-    // Protect page
+    // Auth Guard
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = "login.html";
@@ -233,7 +229,7 @@
       }
     });
 
-    // 👥 Users
+    // Load Users
     async function loadUsers() {
       const table = document.querySelector("#usersTable tbody");
       table.innerHTML = "";
@@ -251,17 +247,16 @@
               onclick="togglePremium('${docSnap.id}', ${!u.isPremium})">
               ${u.isPremium ? "❌ Remove Premium" : "⭐ Set Premium"}
             </button>
-          </td>
-        `;
+          </td>`;
         table.appendChild(tr);
       });
     }
 
-    // 🛠 Workers
+    // Load Workers
     async function loadWorkers() {
       const table = document.querySelector("#workersTable tbody");
       table.innerHTML = "";
-      const q = query(collection(db, "users"), where("role", "in", ["painter","plumber","electrician"]));
+      const q = query(collection(db, "users"), where("role", "in", ["painter", "plumber", "electrician"]));
       const snapshot = await getDocs(q);
       snapshot.forEach(docSnap => {
         const w = docSnap.data();
@@ -276,21 +271,20 @@
               onclick="togglePremium('${docSnap.id}', ${!w.isPremium})">
               ${w.isPremium ? "❌ Remove Premium" : "⭐ Set Premium"}
             </button>
-          </td>
-        `;
+          </td>`;
         table.appendChild(tr);
       });
     }
 
-    // ⭐ Toggle Premium
+    // Toggle Premium
     window.togglePremium = async function(uid, status) {
       await updateDoc(doc(db, "users", uid), { isPremium: Boolean(status) });
-      alert("✅ Premium updated");
+      alert("✅ Premium status updated.");
       loadUsers();
       loadWorkers();
     };
 
-    // 📩 Requests
+    // Load Requests
     async function loadRequests() {
       const table = document.querySelector("#requestsTable tbody");
       table.innerHTML = "";
@@ -300,37 +294,30 @@
         const r = docSnap.data();
         const id = docSnap.id;
         let created = "-";
-        if (r.createdAt) {
-          if (r.createdAt.seconds) {
-            created = new Date(r.createdAt.seconds * 1000).toLocaleString();
-          } else {
-            created = new Date(r.createdAt).toLocaleString();
-          }
+        if (r.createdAt?.seconds) {
+          created = new Date(r.createdAt.seconds * 1000).toLocaleString();
         }
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${r.name}</td>
-          <td>${r.phone}</td>
-          <td>${r.details}</td>
+          <td>${r.name || "-"}</td>
+          <td>${r.phone || "-"}</td>
+          <td>${r.details || "-"}</td>
           <td>${created}</td>
-          <td>
-            <button class="delete" onclick="deleteRequest('${id}')">🗑️ Delete</button>
-          </td>
-        `;
+          <td><button class="delete" onclick="deleteRequest('${id}')">🗑️ Delete</button></td>`;
         table.appendChild(tr);
       });
     }
 
-    // 🗑️ Delete Request
-    window.deleteRequest = async function(reqId) {
+    // Delete Request
+    window.deleteRequest = async function(id) {
       if (confirm("Are you sure you want to delete this request?")) {
-        await deleteDoc(doc(db, "requests", reqId));
-        alert("🗑️ Request deleted");
+        await deleteDoc(doc(db, "requests", id));
+        alert("🗑️ Request deleted.");
         loadRequests();
       }
     };
 
-    // 🏬 Stores
+    // Load Stores
     async function loadStores() {
       const table = document.querySelector("#storesTable tbody");
       table.innerHTML = "";
@@ -341,18 +328,23 @@
         tr.innerHTML = `
           <td>${s.name || "-"}</td>
           <td>${s.phone || "-"}</td>
-          <td>${s.desc || "-"}</td>
-        `;
+          <td>${s.desc || "-"}</td>`;
         table.appendChild(tr);
       });
     }
 
-    // 🚪 Logout
+    // Logout
     document.getElementById("logoutBtn").addEventListener("click", () => {
       signOut(auth).then(() => {
         window.location.href = "login.html";
       });
     });
+
+    // ✅ PWA Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(() => console.log("✅ Service Worker registered"));
+    }
   </script>
 </body>
 </html>

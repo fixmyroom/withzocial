@@ -1,12 +1,26 @@
 // ===============================
-// FixMyRoom - Booking Logic
+// FixMyRoom - Booking Logic (Modular SDK)
 // ===============================
 
+import {
+  getFirestore, doc, getDoc, addDoc, collection, onSnapshot, query, orderBy
+} from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+import {
+  getAuth
+} from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+import { app } from "./firebase.js";
+import { showAlert } from "./utils.js"; // ✅ Import showAlert
+
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// ===============================
 // Submit a service request
-function submitRequest() {
-  const user = firebase.auth().currentUser;
+// ===============================
+export async function submitRequest() {
+  const user = auth.currentUser;
   if (!user) {
-    alert("❌ Please login first!");
+    showAlert("Please login first!", "error");
     return;
   }
 
@@ -14,22 +28,21 @@ function submitRequest() {
   const requestDetails = document.getElementById("requestDetails").value.trim();
 
   if (!serviceType || !requestDetails) {
-    alert("⚠️ Please select a service and enter details!");
+    showAlert("Please select a service and enter details!", "error");
     return;
   }
 
-  // Get customer profile for name + phone
-  db.collection("users").doc(user.uid).get().then(doc => {
-    if (!doc.exists) {
-      alert("❌ Profile not found. Please update your profile.");
+  try {
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (!userDoc.exists()) {
+      showAlert("Profile not found. Please update your profile.", "error");
       return;
     }
 
-    const profile = doc.data();
+    const profile = userDoc.data();
     const location = profile.location || null;
 
-    // Save request
-    db.collection("requests").add({
+    await addDoc(collection(db, "requests"), {
       customerId: user.uid,
       customerName: profile.name || "Unnamed",
       customerPhone: profile.phone || "N/A",
@@ -38,28 +51,31 @@ function submitRequest() {
       location,
       status: "pending",
       createdAt: Date.now()
-    }).then(() => {
-      alert("✅ Request sent! Please wait for a worker to respond.");
-      document.getElementById("requestDetails").value = "";
-    }).catch(err => {
-      console.error("Request failed:", err);
-      alert("❌ Failed to submit request.");
     });
-  });
+
+    showAlert("Request sent! Please wait for a worker to respond.", "success");
+    document.getElementById("requestDetails").value = "";
+  } catch (err) {
+    console.error("Request failed:", err);
+    showAlert("Failed to submit request.", "error");
+  }
 }
 
 // ===============================
-// Worker Notifications
+// Worker Listener (For worker.html usage)
 // ===============================
-// (This is passive - workers will see only relevant requests in their dashboard.)
-db.collection("requests")
-  .orderBy("createdAt", "desc")
-  .onSnapshot(snapshot => {
-    snapshot.docChanges().forEach(change => {
+export function listenToRequests(callback) {
+  const q = query(collection(db, "requests"), orderBy("createdAt", "desc"));
+
+  onSnapshot(q, (snapshot) => {
+    snapshot.docChanges().forEach((change) => {
       if (change.type === "added") {
         const data = change.doc.data();
         console.log("📩 New request:", data.serviceType, data.details);
-        // In worker.html, we will filter requests by role
+        if (typeof callback === "function") {
+          callback(data);
+        }
       }
     });
   });
+}

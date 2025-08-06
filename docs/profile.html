@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FixMyRoom - Profile</title>
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="icon" href="img/logo.png" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#000000"/>
 
   <style>
     body {
@@ -92,19 +95,15 @@
     const storage = firebase.storage();
     const usersRef = firebase.firestore().collection("users");
 
-    // Hide/show price based on role
     document.getElementById("role").addEventListener("change", () => {
       const role = document.getElementById("role").value;
-      document.getElementById("price").style.display = 
+      document.getElementById("price").style.display =
         (role === "customer" || role === "admin" || role === "store") ? "none" : "block";
     });
 
-    // Load existing profile
     auth.onAuthStateChanged(user => {
-      if (!user) {
-        window.location.href = "login.html";
-        return;
-      }
+      if (!user) return window.location.href = "login.html";
+
       usersRef.doc(user.uid).get().then(doc => {
         if (doc.exists) {
           const data = doc.data();
@@ -112,19 +111,20 @@
           document.getElementById("phone").value = data.phone || "";
           document.getElementById("role").value = data.role || "customer";
           document.getElementById("price").value = data.price || "";
+
           if (data.photoURL) {
             document.getElementById("profilePreview").src = data.photoURL;
           }
-          if (data.role === "customer" || data.role === "admin" || data.role === "store") {
-            document.getElementById("price").style.display = "none";
-          }
+
+          const r = data.role;
+          document.getElementById("price").style.display =
+            (r === "customer" || r === "admin" || r === "store") ? "none" : "block";
         } else {
           alert("👋 Welcome! Please complete your profile.");
         }
       });
     });
 
-    // Upload profile photo
     document.getElementById("uploadPhoto").onclick = async () => {
       try {
         const file = document.getElementById("profilePhoto").files[0];
@@ -141,7 +141,6 @@
       }
     };
 
-    // Save profile info
     document.getElementById("saveProfile").onclick = async () => {
       try {
         const user = auth.currentUser;
@@ -158,7 +157,6 @@
           return alert("⚠️ Name and phone are required!");
         }
 
-        // Try to get live location if available
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(async pos => {
             data.location = {
@@ -181,14 +179,13 @@
       }
     };
 
-    // ✅ Role-based redirect after save
     function afterSave(role) {
       alert("✅ Profile updated!");
       if (role === "admin") {
         window.location.href = "admin.html";
       } else if (role === "customer") {
         window.location.href = "map.html";
-      } else if (["painter","plumber","electrician"].includes(role)) {
+      } else if (["painter", "plumber", "electrician"].includes(role)) {
         window.location.href = "map.html";
       } else if (role === "store") {
         window.location.href = "store.html";
@@ -197,9 +194,14 @@
       }
     }
 
-    // Logout
     function logout() {
       auth.signOut().then(() => window.location.href = "login.html");
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(reg => console.log("✅ Service Worker registered"))
+        .catch(err => console.warn("Service Worker failed:", err));
     }
   </script>
 </body>

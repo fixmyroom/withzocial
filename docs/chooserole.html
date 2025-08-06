@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Choose Role - FixMyRoom</title>
+
+  <!-- PWA + Manifest -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="icon" href="img/logo.png" type="image/png" />
+
+  <!-- Styles -->
+  <style>
+    body {
+      background: #000;
+      color: white;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+
+    header {
+      background: #111;
+      padding: 15px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    main {
+      padding: 20px;
+    }
+
+    select, button {
+      width: 90%;
+      max-width: 400px;
+      padding: 15px;
+      margin: 20px auto;
+      border-radius: 5px;
+      font-size: 18px;
+      display: block;
+      border: none;
+    }
+
+    select {
+      background: #222;
+      color: white;
+    }
+
+    button {
+      background: #28a745;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #218838;
+    }
+
+    .logo {
+      height: 40px;
+      margin-right: 10px;
+    }
+  </style>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { auth, db } from './firebase.js';
+    import {
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+    import {
+      doc, setDoc
+    } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+
+    // Auth check
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+      }
+    });
+
+    // Save role
+    window.saveRole = async function () {
+      const user = auth.currentUser;
+      const role = document.getElementById("roleSelect").value;
+
+      if (!role) {
+        alert("⚠️ Please select a role");
+        return;
+      }
+
+      try {
+        await setDoc(doc(db, "users", user.uid), {
+          role: role,
+          updatedAt: Date.now()
+        }, { merge: true });
+
+        // Redirect
+        if (role === "admin") {
+          window.location.href = "admin.html";
+        } else if (role === "store") {
+          window.location.href = "store.html";
+        } else {
+          window.location.href = "map.html";
+        }
+      } catch (err) {
+        alert("❌ " + err.message);
+      }
+    };
+  </script>
+</head>
+<body>
+  <header>
+    <img src="img/logo.png" class="logo" alt="FixMyRoom" />
+    <h1>🔧 Choose Your Role</h1>
+  </header>
+
+  <main>
+    <p>Let us know how you want to use FixMyRoom:</p>
+    <select id="roleSelect">
+      <option value="customer">🙋 Customer</option>
+      <option value="painter">🎨 Painter</option>
+      <option value="plumber">🔧 Plumber</option>
+      <option value="electrician">⚡ Electrician</option>
+      <option value="store">🏬 Store</option>
+      <option value="admin">🛠️ Admin</option>
+    </select>
+
+    <button onclick="saveRole()">✅ Confirm & Continue</button>
+  </main>
+
+  <!-- PWA: Register Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(reg => console.log("✅ Service Worker registered"))
+        .catch(err => console.error("SW failed", err));
+    }
+  </script>
+</body>
+</html>

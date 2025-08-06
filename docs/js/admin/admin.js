@@ -1,13 +1,24 @@
 // ===============================
-// FixMyRoom - Admin Panel
+// ✅ FixMyRoom - Admin Panel (MODULAR SDK)
 // ===============================
+import { auth, db } from './firebase.js';
+import { showAlert } from './utils.js';
 
-const usersRef = db.collection("users");
-const requestsRef = db.collection("requests");
-const storesRef = db.collection("stores");
+import {
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 
-// Auth check
-auth.onAuthStateChanged(user => {
+import {
+  collection, doc, updateDoc, onSnapshot, query, orderBy
+} from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+
+// ✅ Firestore References
+const usersRef = collection(db, "users");
+const requestsRef = collection(db, "requests");
+const storesRef = collection(db, "stores");
+
+// ✅ Auth check
+onAuthStateChanged(auth, (user) => {
   if (!user) {
     window.location.href = "login.html";
   } else {
@@ -18,16 +29,16 @@ auth.onAuthStateChanged(user => {
 });
 
 // ===============================
-// Users table
+// ✅ Users table
 // ===============================
 function loadUsers() {
   const table = document.querySelector("#usersTable tbody");
   table.innerHTML = "";
 
-  usersRef.onSnapshot(snapshot => {
+  onSnapshot(usersRef, (snapshot) => {
     table.innerHTML = "";
-    snapshot.forEach(doc => {
-      const u = doc.data();
+    snapshot.forEach(docSnap => {
+      const u = docSnap.data();
       const row = document.createElement("tr");
 
       row.innerHTML = `
@@ -36,36 +47,41 @@ function loadUsers() {
         <td>${u.phone || "N/A"}</td>
         <td>${u.isPremium ? "⭐ Yes" : "❌ No"}</td>
         <td>
-          <button onclick="togglePremium('${doc.id}', ${u.isPremium})">
+          <button onclick="togglePremium('${docSnap.id}', ${u.isPremium})">
             ${u.isPremium ? "Remove Premium" : "Set Premium"}
           </button>
         </td>
       `;
-
       table.appendChild(row);
     });
   });
 }
 
-function togglePremium(uid, currentStatus) {
-  usersRef.doc(uid).update({
-    isPremium: !currentStatus
-  }).then(() => {
-    alert("✅ Premium status updated");
-  });
-}
+// ✅ Toggle premium status
+window.togglePremium = async function (uid, currentStatus) {
+  try {
+    const userDoc = doc(db, "users", uid);
+    await updateDoc(userDoc, {
+      isPremium: !currentStatus
+    });
+    showAlert("Premium status updated", "success");
+  } catch (err) {
+    showAlert(err.message, "error");
+  }
+};
 
 // ===============================
-// Requests table
+// ✅ Requests table
 // ===============================
 function loadRequests() {
   const table = document.querySelector("#requestsTable tbody");
   table.innerHTML = "";
 
-  requestsRef.orderBy("createdAt", "desc").onSnapshot(snapshot => {
+  const q = query(requestsRef, orderBy("createdAt", "desc"));
+  onSnapshot(q, (snapshot) => {
     table.innerHTML = "";
-    snapshot.forEach(doc => {
-      const r = doc.data();
+    snapshot.forEach(docSnap => {
+      const r = docSnap.data();
       const row = document.createElement("tr");
 
       row.innerHTML = `
@@ -81,16 +97,16 @@ function loadRequests() {
 }
 
 // ===============================
-// Stores table
+// ✅ Stores table
 // ===============================
 function loadStores() {
   const table = document.querySelector("#storesTable tbody");
   table.innerHTML = "";
 
-  storesRef.onSnapshot(snapshot => {
+  onSnapshot(storesRef, (snapshot) => {
     table.innerHTML = "";
-    snapshot.forEach(doc => {
-      const s = doc.data();
+    snapshot.forEach(docSnap => {
+      const s = docSnap.data();
       const row = document.createElement("tr");
 
       row.innerHTML = `

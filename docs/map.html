@@ -1,10 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FixMyRoom - Map</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FixMyRoom - Workers Map</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="img/logo.png" type="image/png" />
+  <meta name="theme-color" content="#000000" />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
   <style>
     body {
       margin: 0;
@@ -12,12 +21,14 @@
       color: #fff;
       font-family: Arial, sans-serif;
     }
+
     #map {
       width: 100%;
       height: 85vh;
       border-radius: 10px;
       margin-top: 10px;
     }
+
     header {
       display: flex;
       align-items: center;
@@ -26,9 +37,11 @@
       background: #111;
       border-bottom: 2px solid #333;
     }
+
     header .logo {
       height: 40px;
     }
+
     header h2 {
       flex-grow: 1;
       text-align: center;
@@ -36,6 +49,7 @@
       font-size: 1.2rem;
       color: #fff;
     }
+
     .logout-btn {
       background: #f44336;
       border: none;
@@ -44,9 +58,11 @@
       border-radius: 6px;
       cursor: pointer;
     }
+
     .logout-btn:hover {
       background: #d32f2f;
     }
+
     @media (max-width: 768px) {
       .logout-btn {
         position: fixed;
@@ -62,7 +78,7 @@
         box-shadow: 0 4px 6px rgba(0,0,0,0.3);
       }
     }
-    /* Filter dropdown */
+
     #roleFilter {
       width: 200px;
       padding: 8px;
@@ -74,52 +90,68 @@
   </style>
 </head>
 <body>
+
+  <!-- Header -->
   <header>
-    <img src="img/logo.png" alt="FixMyRoom Logo" class="logo">
+    <img src="img/logo.png" alt="FixMyRoom Logo" class="logo" />
     <h2>🗺️ Workers Map</h2>
     <button class="logout-btn" id="logoutBtn">🚪</button>
   </header>
 
-  <main class="container">
-    <div class="card">
-      <!-- 🔽 Role Filter -->
-      <select id="roleFilter">
-        <option value="all">🌍 Show All</option>
-        <option value="painter">🎨 Painters</option>
-        <option value="plumber">🔧 Plumbers</option>
-        <option value="electrician">⚡ Electricians</option>
-        <option value="store">🏬 Stores</option>
-      </select>
+  <!-- Main Content -->
+  <main>
+    <!-- Filter Dropdown -->
+    <select id="roleFilter">
+      <option value="all">🌍 Show All</option>
+      <option value="painter">🎨 Painters</option>
+      <option value="plumber">🔧 Plumbers</option>
+      <option value="electrician">⚡ Electricians</option>
+      <option value="store">🏬 Stores</option>
+    </select>
 
-      <div id="map"></div>
-    </div>
+    <!-- Map -->
+    <div id="map"></div>
   </main>
 
-  <!-- Firebase -->
-  <script type="module">
-    import { auth } from "./firebase.js";
-    import { onAuthStateChanged, signOut } 
-      from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+  <!-- Firebase Config (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
-    // Protect page
-    onAuthStateChanged(auth, (user) => {
+  <!-- Firebase Init -->
+  <script src="js/firebase-config.js"></script>
+
+  <!-- Leaflet.js -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <!-- Map Logic -->
+  <script src="js/map/map.js"></script>
+
+  <!-- Auth & Logout -->
+  <script>
+    firebase.auth().onAuthStateChanged(user => {
       if (!user) {
-        window.location.href = "login.html";
+        location.href = "login.html";
       }
     });
 
-    // Logout
     document.getElementById("logoutBtn").addEventListener("click", () => {
-      signOut(auth).then(() => {
-        window.location.href = "login.html";
+      firebase.auth().signOut().then(() => {
+        location.href = "login.html";
       });
     });
   </script>
 
-  <!-- Google Maps API -->
-  <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap">
+  <!-- PWA Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(reg => console.log("✅ Service Worker Registered"))
+          .catch(err => console.warn("❌ Service Worker Error", err));
+      });
+    }
   </script>
-  <script type="module" src="js/map.js"></script>
 </body>
 </html>

@@ -1,71 +1,76 @@
-// ===========================
-// Auth Logic
-// ===========================
+// auth.js (modular version)
+
+import { auth, db } from './firebase.js';
+import { showAlert } from './utils.js';
+
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+
+import {
+  doc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
 // Login
-function login() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  firebase.auth().signInWithEmailAndPassword(email, password)
-    .then(userCred => {
-      console.log("✅ Logged in:", userCred.user.email);
-      window.location.href = "role.html"; // after login → choose role
-    })
-    .catch(err => {
-      alert("❌ " + err.message);
-    });
+export async function login(email, password) {
+  try {
+    const userCred = await signInWithEmailAndPassword(auth, email, password);
+    console.log("✅ Logged in:", userCred.user.email);
+    window.location.href = "role.html";
+  } catch (err) {
+    showAlert(err.message, "error");
+  }
 }
 
 // Signup
-function signup() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+export async function signup(email, password) {
+  try {
+    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+    console.log("🆕 User created:", userCred.user.email);
 
-  firebase.auth().createUserWithEmailAndPassword(email, password)
-    .then(userCred => {
-      console.log("🆕 User created:", userCred.user.email);
-
-      // Save default user in Firestore
-      db.collection("users").doc(userCred.user.uid).set({
-        email: userCred.user.email,
-        role: "customer", // default role
-        createdAt: Date.now()
-      });
-
-      alert("✅ Account created!");
-      window.location.href = "role.html";
-    })
-    .catch(err => {
-      alert("❌ " + err.message);
+    await setDoc(doc(db, "users", userCred.user.uid), {
+      email: userCred.user.email,
+      role: "customer", // default role
+      createdAt: Date.now()
     });
-}
 
-// Google Sign-in
-function googleLogin() {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  firebase.auth().signInWithPopup(provider)
-    .then(result => {
-      const user = result.user;
-      console.log("✅ Google login:", user.email);
-
-      // Save to Firestore if new
-      db.collection("users").doc(user.uid).set({
-        email: user.email,
-        role: "customer",
-        createdAt: Date.now()
-      }, { merge: true });
-
-      window.location.href = "role.html";
-    })
-    .catch(err => {
-      alert("❌ " + err.message);
-    });
-}
-
-// Auto redirect if already logged in
-firebase.auth().onAuthStateChanged(user => {
-  if (user) {
+    showAlert("Account created!", "success");
     window.location.href = "role.html";
+  } catch (err) {
+    showAlert(err.message, "error");
   }
-});
+}
+
+// Google Login
+export async function googleLogin() {
+  try {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    console.log("✅ Google login:", user.email);
+
+    await setDoc(doc(db, "users", user.uid), {
+      email: user.email,
+      role: "customer",
+      createdAt: Date.now()
+    }, { merge: true });
+
+    window.location.href = "role.html";
+  } catch (err) {
+    showAlert(err.message, "error");
+  }
+}
+
+// Auto-redirect if logged in
+export function checkAuthAndRedirect() {
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      window.location.href = "role.html";
+    }
+  });
+}

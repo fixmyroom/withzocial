@@ -1,15 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FixMyRoom 🚀</title>
-  <link rel="stylesheet" href="style.css">
+
+  <!-- PWA Essentials -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="/img/logo.png" type="image/png" />
+  <meta name="theme-color" content="#1db954" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css" />
   <style>
     body {
       margin: 0;
       font-family: "Segoe UI", Arial, sans-serif;
-      background: #000; /* Uber-style black */
+      background: #000;
       color: #fff;
       text-align: center;
       display: flex;
@@ -23,7 +30,6 @@
       padding: 30px;
     }
 
-    /* Logo */
     .logo {
       width: 120px;
       height: auto;
@@ -41,7 +47,6 @@
       color: #bbb;
     }
 
-    /* Main button */
     .btn-main {
       display: inline-block;
       background: #28a745;
@@ -51,7 +56,7 @@
       font-weight: 600;
       border-radius: 12px;
       text-decoration: none;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
       transition: all 0.25s ease-in-out;
       margin-bottom: 20px;
     }
@@ -61,7 +66,6 @@
       transform: translateY(-2px);
     }
 
-    /* Social links */
     .social-links {
       margin-top: 20px;
     }
@@ -75,47 +79,47 @@
       color: #fff;
       font-size: 1rem;
       transition: all 0.25s ease-in-out;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
     }
 
-    /* WhatsApp */
     .whatsapp {
-      background: #25D366;
+      background: #25d366;
     }
     .whatsapp:hover {
       background: #1db954;
-      box-shadow: 0 0 12px #25D366;
+      box-shadow: 0 0 12px #25d366;
       transform: translateY(-2px);
     }
 
-    /* Facebook */
     .facebook {
-      background: #1877F2;
+      background: #1877f2;
     }
     .facebook:hover {
       background: #0d5adb;
-      box-shadow: 0 0 12px #1877F2;
+      box-shadow: 0 0 12px #1877f2;
       transform: translateY(-2px);
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- Logo -->
-    <img src="img/logo.png" alt="FixMyRoom Logo" class="logo">
-
-    <!-- Title -->
+    <img src="img/logo.png" alt="FixMyRoom Logo" class="logo" />
     <h1>FixMyRoom 🛠️</h1>
     <p class="slogan">Book workers & stores near you in real-time 🚀</p>
-
-    <!-- Main button -->
     <a href="login.html" class="btn-main">🔑 Login / Signup</a>
-
-    <!-- Contact Links -->
     <div class="social-links">
       <a href="https://wa.me/9779851151294" target="_blank" class="whatsapp">💬 WhatsApp</a>
       <a href="https://www.facebook.com/people/ZocialPainter/61578207554465/" target="_blank" class="facebook">📘 Facebook</a>
     </div>
   </div>
+
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(reg => console.log("✅ Service Worker registered"))
+        .catch(err => console.error("❌ SW registration failed", err));
+    }
+  </script>
 </body>
 </html>
