@@ -1,0 +1,131 @@
+/* ==========================
+   FixMyRoom Dashboard Styles
+   ========================== */
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: #000;       /* Dark background */
+  color: #fff;            /* White text */
+}
+
+header {
+  background: #111;
+  color: #fff;
+  padding: 15px;
+  text-align: center;
+  border-bottom: 1px solid #222;
+}
+
+header .logo {
+  width: 80px;
+  height: auto;
+  display: block;
+  margin: 0 auto 10px;
+}
+
+header h1 {
+  margin: 5px 0;
+  font-size: 22px;
+}
+
+header button {
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+header button:hover {
+  background: #b02a37;
+}
+
+/* Main container */
+main {
+  padding: 20px;
+  max-width: 600px;
+  margin: auto;
+}
+
+/* Section blocks */
+section {
+  background: #111;
+  padding: 20px;
+  margin: 15px 0;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.6);
+}
+
+section h2 {
+  margin-bottom: 15px;
+  font-size: 18px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 5px;
+}
+
+/* Inputs */
+input, select, button {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 6px;
+  border: none;
+  font-size: 15px;
+}
+
+input, select {
+  background: #222;
+  color: #fff;
+}
+
+input::placeholder {
+  color: #aaa;
+}
+
+/* Action buttons */
+button {
+  background: #28a745;
+  color: #fff;
+  cursor: pointer;
+}
+button:hover {
+  background: #218838;
+}
+
+/* Special buttons */
+#uploadPhoto {
+  background: #007bff;
+}
+#uploadPhoto:hover {
+  background: #0069d9;
+}
+
+/* Links (if any) */
+a {
+  color: #0dcaf0;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* Map container fix */
+#map {
+  height: 80vh;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+/* Request modal dark theme */
+#requestModal {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+#requestModal form {
+  background: #111;
+  padding: 20px;
+  border-radius: 10px;
+  color: white;
+}

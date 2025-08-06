@@ -105,12 +105,27 @@ db.collection("users")
         return;
       }
 
-      // Popup content with Request button
+      // ✅ Only show price for workers
+      let priceRow = "";
+      if (["painter", "plumber", "electrician"].includes(data.role)) {
+        priceRow = `💰 Price: ${data.price || "Not set"}<br>`;
+      }
+
+      // ✅ Popup content
       const popupContent = `
         <b>${getRoleEmoji(data.role, data.isPremium)} ${data.name || "Unnamed"}</b><br>
+        👤 Role: ${data.role || "N/A"}<br>
         📞 ${data.phone}<br>
-        💰 Price: ${data.price || "Not set"}<br>
-        <button onclick="openRequest('${id}','${data.role || 'worker'}','${data.name || ''}')">📩 Request</button>
+        ${priceRow}
+        <a href="tel:${data.phone}">
+          <button style="background:#28a745;color:#fff;border:none;padding:8px 12px;border-radius:5px;margin-right:5px;">
+            📞 Call
+          </button>
+        </a>
+        <button onclick="openRequest('${id}','${data.role || 'worker'}','${data.name || ''}')"
+          style="background:#007bff;color:#fff;border:none;padding:8px 12px;border-radius:5px;">
+          📩 Request
+        </button>
       `;
 
       if (markers[id]) {

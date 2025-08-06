@@ -6,6 +6,46 @@
   <title>FixMyRoom - Profile</title>
   <link rel="stylesheet" href="css/dashboard.css">
 
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #000;
+      color: white;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    header {
+      background: #111;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      height: 40px;
+    }
+    h1 { margin: 0; font-size: 20px; }
+    main { padding: 20px; }
+    input, select, button {
+      width: 90%;
+      padding: 10px;
+      margin: 10px auto;
+      display: block;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
+    }
+    input, select { background: #222; color: #fff; }
+    button {
+      background: #28a745;
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover { background: #218838; }
+  </style>
+
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -31,14 +71,15 @@
     <!-- Basic Info -->
     <section>
       <h2>ℹ️ Basic Information</h2>
-      <input type="text" id="name" placeholder="Your Name">
-      <input type="text" id="phone" placeholder="📞 Phone Number">
+      <input type="text" id="name" placeholder="Your Name" required>
+      <input type="text" id="phone" placeholder="📞 Phone Number" required>
       <select id="role">
         <option value="customer">🙋 Customer</option>
         <option value="painter">🎨 Painter</option>
         <option value="plumber">🔧 Plumber</option>
         <option value="electrician">⚡ Electrician</option>
         <option value="store">🏬 Store</option>
+        <option value="admin">🛠️ Admin</option>
       </select>
       <input type="number" id="price" placeholder="💰 Price (for workers only)">
       <button id="saveProfile">💾 Save Profile</button>
@@ -54,7 +95,7 @@
     // Hide/show price based on role
     document.getElementById("role").addEventListener("change", () => {
       const role = document.getElementById("role").value;
-      document.getElementById("price").style.display = (role === "customer") ? "none" : "block";
+      document.getElementById("price").style.display = (role === "customer" || role === "admin") ? "none" : "block";
     });
 
     // Load existing profile
@@ -73,7 +114,7 @@
           if (data.photoURL) {
             document.getElementById("profilePreview").src = data.photoURL;
           }
-          if (data.role === "customer") {
+          if (data.role === "customer" || data.role === "admin") {
             document.getElementById("price").style.display = "none";
           }
         } else {
@@ -84,45 +125,71 @@
 
     // Upload profile photo
     document.getElementById("uploadPhoto").onclick = async () => {
-      const file = document.getElementById("profilePhoto").files[0];
-      if (!file) return alert("Please choose a photo first!");
-      const user = auth.currentUser;
-      const ref = storage.ref("profiles/" + user.uid + ".jpg");
-      await ref.put(file);
-      const url = await ref.getDownloadURL();
-      await usersRef.doc(user.uid).update({ photoURL: url });
-      document.getElementById("profilePreview").src = url;
-      alert("✅ Photo uploaded!");
+      try {
+        const file = document.getElementById("profilePhoto").files[0];
+        if (!file) return alert("Please choose a photo first!");
+        const user = auth.currentUser;
+        const ref = storage.ref("profiles/" + user.uid + ".jpg");
+        await ref.put(file);
+        const url = await ref.getDownloadURL();
+        await usersRef.doc(user.uid).set({ photoURL: url }, { merge: true });
+        document.getElementById("profilePreview").src = url;
+        alert("✅ Photo uploaded!");
+      } catch (err) {
+        alert("❌ " + err.message);
+      }
     };
 
     // Save profile info
     document.getElementById("saveProfile").onclick = async () => {
-      const user = auth.currentUser;
-      const role = document.getElementById("role").value;
-      const data = {
-        name: document.getElementById("name").value,
-        phone: document.getElementById("phone").value,
-        role: role,
-        price: role === "customer" ? null : document.getElementById("price").value,
-        updatedAt: Date.now()
-      };
+      try {
+        const user = auth.currentUser;
+        const role = document.getElementById("role").value;
+        const data = {
+          name: document.getElementById("name").value,
+          phone: document.getElementById("phone").value,
+          role: role,
+          price: (role === "customer" || role === "admin") ? null : document.getElementById("price").value,
+          updatedAt: Date.now()
+        };
 
-      if (!data.name || !data.phone) {
-        return alert("⚠️ Name and phone are required!");
+        if (!data.name || !data.phone) {
+          return alert("⚠️ Name and phone are required!");
+        }
+
+        // Try to get live location if available
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(async pos => {
+            data.location = {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+              updated: Date.now()
+            };
+            await usersRef.doc(user.uid).set(data, { merge: true });
+            afterSave(role);
+          }, async () => {
+            await usersRef.doc(user.uid).set(data, { merge: true });
+            afterSave(role);
+          });
+        } else {
+          await usersRef.doc(user.uid).set(data, { merge: true });
+          afterSave(role);
+        }
+      } catch (err) {
+        alert("❌ " + err.message);
       }
+    };
 
-      await usersRef.doc(user.uid).set(data, { merge: true });
+    function afterSave(role) {
       alert("✅ Profile updated!");
-
-      // Redirect after saving
       if (role === "customer") {
         window.location.href = "map.html";
       } else if (role === "admin") {
         window.location.href = "admin.html";
       } else {
-        window.location.href = "profile.html"; // workers & stores stay here
+        window.location.href = "map.html"; // workers & stores go to map
       }
-    };
+    }
 
     // Logout
     function logout() {
