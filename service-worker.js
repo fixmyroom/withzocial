@@ -1,20 +1,11 @@
 const CACHE_NAME = "fixmyroom-cache-v1";
 const FILES_TO_CACHE = [
-  "./",
-  "./index.html",
-  "./login.html",
-  "./style.css",
-  "./manifest.json",
-  "./firebase.js",
-  "./utils.js",
-  "./img/logo.png",
-  "./favicon.ico",
-  "./profile.html",
-  "./map.html",
-  "./admin.html",
-  "./store.html",
-  "./worker.html",
-  "./customer.html"
+  "/",
+  "/index.html",
+  "/style.css",
+  "/manifest.json",
+  "/img/logo.png",
+  "/login.html"
 ];
 
 // Install
@@ -45,16 +36,9 @@ self.addEventListener("activate", (event) => {
 
 // Fetch
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      return (
-        cachedResponse ||
-        fetch(event.request).catch(() => {
-          // Optional: fallback logic here
-        })
-      );
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
     })
   );
 });
